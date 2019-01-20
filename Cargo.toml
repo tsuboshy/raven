@@ -1,0 +1,7 @@
+[package]
+name = "cRow"
+version = "0.1.0"
+authors = ["tsuboshy <tsuboshy@gmail.com>"]
+edition = "2018"
+
+[dependencies]
