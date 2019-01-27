@@ -1,10 +1,10 @@
 extern crate serde_yaml;
-extern crate cRow;
+extern crate raven;
 
-use cRow::input::{Config, LogConfig};
-use cRow::notify::Notify;
-use cRow::output::OutputMethod;
-use cRow::logger::log_level::LogLevel::*;
+use raven::input::{Config, LogConfig};
+use raven::notify::Notify;
+use raven::output::OutputMethod;
+use raven::logger::log_level::LogLevel::*;
 
 static FULL_PARAMETER_YAML: &'static str = r#"
 name: "テスト"
@@ -17,7 +17,7 @@ request:
         - "1"
   method: Post
   headers:
-    User-Agent: "cRow"
+    User-Agent: "raven"
     Content-Type: "application/json"
   params:
     - offset:
@@ -42,12 +42,12 @@ max_threads : 10
 notify:
   - slack:
       url: "https://slack.service/xxxx"
-      channel: "crow-devops"
+      channel: "raven-devops"
       mention: "here"
 
 output:
   - local_file:
-      file_path: "/var/crow/%Y/%m/%d/{{id}}.html"
+      file_path: "/var/raven/%Y/%m/%d/{{id}}.html"
 
   - amazon_s3:
       region: "ap-nothereast-1"
@@ -55,7 +55,7 @@ output:
       object_key: "test_key"
 
 log:
-  file_path: "/var/tmp/cRow.log"
+  file_path: "/var/tmp/raven.log"
   level: "warn"
 "#;
 
@@ -69,10 +69,10 @@ pub fn it_should_success_to_parse_when_full_parameter_exists() {
     assert_eq!(vars.len(), 1);
     assert_eq!(vars[0].get("id").unwrap()[0], "[1..10]");
     assert_eq!(vars[0].get("number").unwrap()[0], "1");
-    assert_eq!(parsed.request.method, cRow::input::request::Method::Post);
+    assert_eq!(parsed.request.method, raven::input::request::Method::Post);
     
     let headers = &parsed.request.headers;
-    assert_eq!(headers.get("User-Agent").unwrap(), "cRow");
+    assert_eq!(headers.get("User-Agent").unwrap(), "raven");
     assert_eq!(headers.get("Content-Type").unwrap(), "application/json");
 
     let params = &parsed.request.params;
@@ -99,14 +99,14 @@ pub fn it_should_success_to_parse_when_full_parameter_exists() {
     assert_eq!(notify.len(), 1);
     let expected_notify = Notify::Slack { 
       url: "https://slack.service/xxxx".to_owned(), 
-      channel: "crow-devops".to_owned(), 
+      channel: "raven-devops".to_owned(), 
       mention: Some("here".to_owned())
     };
     assert_eq!(notify[0], expected_notify);
 
     let output = &parsed.output;
     assert_eq!(output.len(), 2);
-    let expected_local = OutputMethod::LocalFile { file_path: "/var/crow/%Y/%m/%d/{{id}}.html".to_owned() };
+    let expected_local = OutputMethod::LocalFile { file_path: "/var/raven/%Y/%m/%d/{{id}}.html".to_owned() };
     let expected_s3 = OutputMethod::AmazonS3 {
       region: "ap-nothereast-1".to_owned(),
       bucket_name: "test_bucket".to_owned(),
@@ -116,7 +116,7 @@ pub fn it_should_success_to_parse_when_full_parameter_exists() {
     assert_eq!(output[1], expected_s3);
 
     let expected_log_config = LogConfig {
-      file_path: "/var/tmp/cRow.log".to_owned(),
+      file_path: "/var/tmp/raven.log".to_owned(),
       level: Warn
     };
     assert_eq!(parsed.log, expected_log_config);
@@ -130,10 +130,10 @@ request:
 
 output:
   - local_file:
-      file_path: "/var/crow/%Y/%m/%d/{{id}}.html"
+      file_path: "/var/raven/%Y/%m/%d/{{id}}.html"
 
 log:
-  file_path: "/var/tmp/cRow.log"
+  file_path: "/var/tmp/raven.log"
   level: "DEBUG"
 "#;
 
@@ -145,7 +145,7 @@ fn it_should_success_to_parse_when_only_required_param_exists() {
     
     let vars = &parsed.request.vars;
     assert_eq!(vars.len(), 0);
-    assert_eq!(parsed.request.method, cRow::input::request::Method::Get);
+    assert_eq!(parsed.request.method, raven::input::request::Method::Get);
     
     let headers = &parsed.request.headers;
     assert_eq!(headers.len(), 0);
@@ -165,11 +165,11 @@ fn it_should_success_to_parse_when_only_required_param_exists() {
 
     let output = &parsed.output;
     assert_eq!(output.len(), 1);
-    let expected_local = OutputMethod::LocalFile { file_path: "/var/crow/%Y/%m/%d/{{id}}.html".to_owned() };
+    let expected_local = OutputMethod::LocalFile { file_path: "/var/raven/%Y/%m/%d/{{id}}.html".to_owned() };
     assert_eq!(output[0], expected_local);
 
     let expected_log_config = LogConfig {
-      file_path: "/var/tmp/cRow.log".to_owned(),
+      file_path: "/var/tmp/raven.log".to_owned(),
       level: Debug
     };
     assert_eq!(parsed.log, expected_log_config);

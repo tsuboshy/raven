@@ -2,9 +2,9 @@
 // https://serde.rs/attributes.html#container-attributes
 extern crate serde_yaml;
 extern crate log;
-extern crate cRow;
+extern crate raven;
 
-use cRow::input::Config;
+use raven::input::Config;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
