@@ -102,7 +102,7 @@ fn parse_to_token(target_string: &str) -> Result<Vec<Token>, combine::error::Str
 }
 
 #[test]
-fn name() {
+fn parse_to_token_test() {
     let plain = parse_to_token("https://raven/");
     assert_eq!(plain, Ok(vec![Token::PlainText("https://raven/".to_owned())]));
 
@@ -123,6 +123,92 @@ fn name() {
 
 }
 
-// pub fn new(template: &str) -> Emdeber {
 
-// }
+/// try to expand numeric list strings.
+/// 
+/// ```
+/// use raven::input::raven_template_parser::try_expand_list;
+/// 
+/// let numeric_list_pattern = "[1..5]";
+/// let result1 = try_expand_list(numeric_list_pattern);
+/// assert_eq!(result1, vec!["1","2","3","4","5"]);
+///
+/// let not_numeric_list_pattern = "a1234";
+/// let result2 = try_expand_list(not_numeric_list_pattern);
+/// assert_eq!(result2, vec!["a1234".to_owned()]);
+///
+/// let contain_other_strings = "id-[1..2]-[1..2]";
+/// let result3 = try_expand_list(contain_other_strings);
+/// assert_eq!(
+///     result3, 
+///     vec![ "id-1-1".to_owned()
+///         , "id-1-2".to_owned()
+///         , "id-2-1".to_owned()
+///         , "id-2-2".to_owned()
+///         ]
+/// )
+///```
+pub fn try_expand_list(target_string: &str) -> Vec<String> {
+    let expand_list_parser = ( 
+        char('['), 
+        many1(digit()),
+        many1(char('.')),
+        many1(digit()),
+        char(']')
+    ).map(|t: (_, String, String, String, _) | {
+        let start = t.1.parse::<i32>().unwrap();
+        let end = t.3.parse::<i32>().unwrap() + 1;
+        (start .. end).into_iter().map(|i| i.to_string()).collect::<Vec<String>>()
+    });
+
+    let plain_text = many1(none_of("[".chars())).map(|plain_text: String| vec![plain_text]);
+    let plain_left_brace = char('[').map(|_| vec!["[".to_owned()]);
+
+    let mut main_parser = many1::<Vec<Vec<String>>, _>(
+        choice((
+            attempt(expand_list_parser).or(attempt(plain_left_brace)),
+            attempt(plain_text)
+        ))
+    ).skip(eof());
+
+    let parsed = main_parser.parse(target_string);
+
+    match parsed {
+        Ok((result, _)) => result.iter().fold(vec!["".to_owned()], |result, vec| product_list(&result, vec)),
+        Err(_) => vec![target_string.to_owned()]
+    }        
+}
+
+fn product_list(vec1: &Vec<String>, vec2: &Vec<String>) -> Vec<String> {
+    let mut result = Vec::with_capacity(vec1.len() * vec2.len());
+    for item_1 in vec1 {
+        for item_2 in vec2 {
+            result.push([item_1.to_owned(), item_2.to_owned()].concat());
+        }
+    }
+    result
+}
+
+
+#[test]
+fn try_expand_list_test() {
+    let numeric_list_pattern = "[1..5]";
+    let result1 = try_expand_list(numeric_list_pattern);
+    assert_eq!(result1, vec!["1","2","3","4","5"]);
+
+    let not_numeric_list_pattern = "a1234";
+    let result2 = try_expand_list(not_numeric_list_pattern);
+    assert_eq!(result2, vec!["a1234".to_owned()]);
+
+    let contain_other_strings = "id-[1..2]-[1..2]";
+    let result3 = try_expand_list(contain_other_strings);
+    assert_eq!(
+        result3, 
+        vec![ "id-1-1".to_owned()
+            , "id-1-2".to_owned()
+            , "id-2-1".to_owned()
+            , "id-2-2".to_owned()
+            ]
+    )
+
+}
