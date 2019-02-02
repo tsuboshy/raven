@@ -1,14 +1,14 @@
 use super::super::logger::log_level::LogLevel;
 use serde_derive::*;
 use super::super::notify::Notify;
-use super::request::Request;
+use super::request::RavenRequest;
 use super::super::output::OutputMethod;
 
 #[derive(Debug, PartialEq, Deserialize)]
-pub struct Config {
+pub struct RavenConfig {
     pub name: String,
 
-    pub request: Request,
+    pub request: RavenRequest,
 
     #[serde(default)]
     pub notify: Vec<Notify>,

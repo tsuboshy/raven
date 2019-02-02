@@ -1,10 +1,11 @@
 extern crate serde_yaml;
 extern crate raven;
 
-use raven::input::{Config, LogConfig};
+use raven::input::{RavenConfig, LogConfig};
 use raven::notify::Notify;
 use raven::output::OutputMethod;
 use raven::logger::log_level::LogLevel::*;
+use raven::crawl::request::Method::*;
 
 static FULL_PARAMETER_YAML: &'static str = r#"
 name: "テスト"
@@ -60,8 +61,8 @@ log:
 "#;
 
 #[test]
-pub fn it_should_success_to_parse_when_full_parameter_exists() {
-    let parsed: Config = serde_yaml::from_str::<Config>(&FULL_PARAMETER_YAML).unwrap();
+fn it_should_success_to_parse_when_full_parameter_exists() {
+    let parsed = serde_yaml::from_str::<RavenConfig>(&FULL_PARAMETER_YAML).unwrap();
     assert_eq!(parsed.name, "テスト");
     assert_eq!(parsed.request.url, "https://www.craw.app/{{id}}/{{number}}");
     
@@ -69,7 +70,7 @@ pub fn it_should_success_to_parse_when_full_parameter_exists() {
     assert_eq!(vars.len(), 1);
     assert_eq!(vars[0].get("id").unwrap()[0], "[1..10]");
     assert_eq!(vars[0].get("number").unwrap()[0], "1");
-    assert_eq!(parsed.request.method, raven::input::request::Method::Post);
+    assert_eq!(parsed.request.method, Post);
     
     let headers = &parsed.request.headers;
     assert_eq!(headers.get("User-Agent").unwrap(), "raven");
@@ -139,13 +140,13 @@ log:
 
 #[test]
 fn it_should_success_to_parse_when_only_required_param_exists() {
-    let parsed: Config = serde_yaml::from_str::<Config>(&MIN_CONFIG_YAML).unwrap();
+    let parsed = serde_yaml::from_str::<RavenConfig>(&MIN_CONFIG_YAML).unwrap();
     assert_eq!(parsed.name, "テスト");
     assert_eq!(parsed.request.url, "https://www.craw.app/");
     
     let vars = &parsed.request.vars;
     assert_eq!(vars.len(), 0);
-    assert_eq!(parsed.request.method, raven::input::request::Method::Get);
+    assert_eq!(parsed.request.method, Get);
     
     let headers = &parsed.request.headers;
     assert_eq!(headers.len(), 0);

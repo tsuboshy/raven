@@ -4,7 +4,7 @@ extern crate serde_yaml;
 extern crate log;
 extern crate raven;
 
-use raven::input::Config;
+use raven::input::RavenConfig;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
@@ -18,7 +18,7 @@ fn main() {
 
     println!("{}", config_yaml_string);
 
-    let config = serde_yaml::from_str::<Config>(&config_yaml_string);
+    let config = serde_yaml::from_str::<RavenConfig>(&config_yaml_string);
     
     println!("{:?}", config);
 }

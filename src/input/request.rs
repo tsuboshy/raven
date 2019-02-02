@@ -1,8 +1,9 @@
 use serde_derive::*;
 use std::collections::hash_map::HashMap;
+use super::super::crawl::request::Method;
 
 #[derive(Debug, Deserialize, PartialEq)]
-pub struct Request {
+pub struct RavenRequest {
     pub url: String,
     
     pub method: Method,
@@ -35,9 +36,4 @@ fn utf8() -> String {
 
 fn default_timeout() -> u8 {
     1
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
-pub enum Method {
-    Get, Post
 }
