@@ -1,6 +1,7 @@
 use combine::*;
 use combine::char::*;
 use std::collections::HashMap;
+use chrono::prelude::*;
 
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -158,7 +159,10 @@ pub fn try_expand_list(target_string: &str) -> Vec<String> {
     ).map(|t: (_, String, String, String, _) | {
         let start = t.1.parse::<i32>().unwrap();
         let end = t.3.parse::<i32>().unwrap() + 1;
-        (start .. end).into_iter().map(|i| i.to_string()).collect::<Vec<String>>()
+        (start .. end)
+            .into_iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<String>>()
     });
 
     let plain_text = many1(none_of("[".chars())).map(|plain_text: String| vec![plain_text]);
@@ -174,16 +178,22 @@ pub fn try_expand_list(target_string: &str) -> Vec<String> {
     let parsed = main_parser.parse(target_string);
 
     match parsed {
-        Ok((result, _)) => result.iter().fold(vec!["".to_owned()], |result, vec| product_list(&result, vec)),
+        Ok((result, _)) => result.iter()
+            .fold(vec!["".to_owned()], |result, vec| {
+                product_list(&result, vec)
+                    .iter()
+                    .map(|string_list| string_list.concat())
+                    .collect()
+            }),
         Err(_) => vec![target_string.to_owned()]
     }        
 }
 
-fn product_list(vec1: &Vec<String>, vec2: &Vec<String>) -> Vec<String> {
+fn product_list<T: Clone>(vec1: &Vec<T>, vec2: &Vec<T>) -> Vec<Vec<T>> {
     let mut result = Vec::with_capacity(vec1.len() * vec2.len());
     for item_1 in vec1 {
         for item_2 in vec2 {
-            result.push([item_1.to_owned(), item_2.to_owned()].concat());
+            result.push(vec![item_1.clone(), item_2.clone()]);
         }
     }
     result
@@ -211,4 +221,65 @@ fn try_expand_list_test() {
             ]
     )
 
+}
+
+
+pub fn parse_key_value_map(map: HashMap<String, Vec<String>>) -> Vec<HashMap<String, String>> {
+    if map.is_empty() {
+        return vec![HashMap::new()];
+    }
+
+    let now: DateTime<Local> = Local::now();
+
+    let mut single_map_lists: Vec<Vec<HashMap<String, String>>> = vec![];
+    for (key, values) in map.into_iter() {
+        let single_maps = values.iter()
+            .map(|val| now.format(val).to_string())
+            .flat_map(|val| try_expand_list(&val))
+            .map(|val| { 
+                let mut single_map = HashMap::new();
+                single_map.insert(key.to_owned(), val);
+                single_map
+            })
+            .collect::<Vec<HashMap<String, String>>>();
+        single_map_lists.push(single_maps);
+    };
+
+    single_map_lists.into_iter()
+        .fold(vec![HashMap::new()], |result_list, list_of_map| {
+            let mut new_result_list: Vec<HashMap<String, String>> = Vec::new();
+            for result_item in &result_list {
+                for map in &list_of_map {
+                    let mut result_map: HashMap<String, String> = HashMap::new();
+                    result_map.extend(result_item.to_owned());
+                    result_map.extend(map.to_owned());
+                    new_result_list.push(result_map);
+                }
+            }
+            new_result_list
+        })
+}
+
+
+#[test]
+fn parse_key_value_map_and_template_parser_testtest() {
+    let now_y_m_d = Local::now().format("%Y-%m-%d").to_string();
+
+    let builder = TemplateBuilder::new("https://raven/{{a}}/{{b}}/{{c}}");
+
+    let mut map = HashMap::new();
+    map.insert("a".to_owned(), vec!["a1".to_owned(), "a2".to_owned()]);
+    map.insert("b".to_owned(), vec!["b[1..2]".to_owned()]);
+    map.insert("c".to_owned(), vec!["c1-%Y-%m-%d".to_owned()]);
+
+    let mut expected = vec![
+        ["https://raven/a1/b1/c1-", &now_y_m_d].concat(),
+        ["https://raven/a1/b2/c1-", &now_y_m_d].concat(),
+        ["https://raven/a2/b1/c1-", &now_y_m_d].concat(),
+        ["https://raven/a2/b2/c1-", &now_y_m_d].concat()        
+    ];
+
+    for parsed in parse_key_value_map(map) {
+        assert_eq!(builder.build_string(&parsed), Ok(expected.pop().unwrap()));
+    };
 }
