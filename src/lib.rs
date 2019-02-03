@@ -3,6 +3,7 @@ extern crate serde_derive;
 extern crate serde_yaml;
 extern crate log;
 extern crate combine;
+extern crate chrono;
 
 pub mod crawl;
 pub mod input;
