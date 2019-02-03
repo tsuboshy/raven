@@ -262,7 +262,7 @@ pub fn parse_key_value_map(map: HashMap<String, Vec<String>>) -> Vec<HashMap<Str
 
 
 #[test]
-fn parse_key_value_map_and_template_parser_testtest() {
+fn parse_key_value_map_and_template_parser_test() {
     let now_y_m_d = Local::now().format("%Y-%m-%d").to_string();
 
     let builder = TemplateBuilder::new("https://raven/{{a}}/{{b}}/{{c}}");
@@ -272,14 +272,18 @@ fn parse_key_value_map_and_template_parser_testtest() {
     map.insert("b".to_owned(), vec!["b[1..2]".to_owned()]);
     map.insert("c".to_owned(), vec!["c1-%Y-%m-%d".to_owned()]);
 
-    let mut expected = vec![
+    let expected = vec![
         ["https://raven/a1/b1/c1-", &now_y_m_d].concat(),
         ["https://raven/a1/b2/c1-", &now_y_m_d].concat(),
         ["https://raven/a2/b1/c1-", &now_y_m_d].concat(),
         ["https://raven/a2/b2/c1-", &now_y_m_d].concat()        
     ];
 
-    for parsed in parse_key_value_map(map) {
-        assert_eq!(builder.build_string(&parsed), Ok(expected.pop().unwrap()));
+    let parsed_map_list = parse_key_value_map(map);
+    assert_eq!(parsed_map_list.len(), expected.len());
+    
+    for parsed in parsed_map_list {
+        let embded = builder.build_string(&parsed).unwrap();
+        assert!(expected.contains(&embded));
     };
 }
