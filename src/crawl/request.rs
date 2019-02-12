@@ -16,7 +16,7 @@ pub struct Request {
     pub body_params: HashMap<String, String>
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Clone)]
 pub enum Method {
     Get, Post
 }
