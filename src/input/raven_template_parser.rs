@@ -1,7 +1,8 @@
 use combine::*;
 use combine::char::*;
 use std::collections::HashMap;
-use chrono::prelude::*;
+use std::borrow::Borrow;
+use std::hash::Hash;
 
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -10,7 +11,6 @@ pub struct TemplateBuilder {
 }
 
 impl TemplateBuilder {
-
     pub fn new(target_string: &str) -> TemplateBuilder {
         let parsed_tokens = parse_to_token(target_string)
             .expect(&["failed to parse template string:", target_string].join(" "));
@@ -37,13 +37,16 @@ impl TemplateBuilder {
     /// let result2 = builder.build_string(&empty);
     /// assert_eq!(result2, Err("could not find value: id".to_owned()));
     /// ```
-    pub fn build_string(&self, key_map: &HashMap<String, String>) -> Result<String, String> {
+    pub fn build_string<KEY, VAL>(&self, key_map: &HashMap<KEY, VAL>) -> Result<String, String> 
+        where KEY: Borrow<str> + Eq + Hash,
+              VAL: AsRef<str>
+    {
         let mut built = String::new();
         for token in &self.tokens {
             match token {
                 Token::PlainText(token) => built.push_str(token),
                 Token::Key(key) => match key_map.get(key) {
-                    Some(value) => built.push_str(value),
+                    Some(value) => built.push_str(value.as_ref()),
                     None => return Err(["could not find value:".to_owned(), key.to_owned()].join(" "))
                 }
             }
@@ -181,19 +184,20 @@ pub fn try_expand_list(target_string: &str) -> Vec<String> {
         Ok((result, _)) => result.iter()
             .fold(vec!["".to_owned()], |result, vec| {
                 product_list(&result, vec)
-                    .iter()
-                    .map(|string_list| string_list.concat())
+                    .into_iter()
+                    .map(|(left, right): (String, String)| [left, right].concat())
                     .collect()
             }),
         Err(_) => vec![target_string.to_owned()]
     }        
 }
 
-fn product_list<T: Clone>(vec1: &Vec<T>, vec2: &Vec<T>) -> Vec<Vec<T>> {
+// TODO: 参照を使う
+pub fn product_list<T1: Clone, T2:Clone>(vec1: &Vec<T1>, vec2: &Vec<T2>) -> Vec<(T1, T2)> {
     let mut result = Vec::with_capacity(vec1.len() * vec2.len());
     for item_1 in vec1 {
         for item_2 in vec2 {
-            result.push(vec![item_1.clone(), item_2.clone()]);
+            result.push((item_1.clone(), item_2.clone()));
         }
     }
     result
@@ -221,69 +225,4 @@ fn try_expand_list_test() {
             ]
     )
 
-}
-
-
-pub fn parse_key_value_map(map: HashMap<String, Vec<String>>) -> Vec<HashMap<String, String>> {
-    if map.is_empty() {
-        return vec![HashMap::new()];
-    }
-
-    let now: DateTime<Local> = Local::now();
-
-    let mut single_map_lists: Vec<Vec<HashMap<String, String>>> = vec![];
-    for (key, values) in map.into_iter() {
-        let single_maps = values.iter()
-            .map(|val| now.format(val).to_string())
-            .flat_map(|val| try_expand_list(&val))
-            .map(|val| { 
-                let mut single_map = HashMap::new();
-                single_map.insert(key.to_owned(), val);
-                single_map
-            })
-            .collect::<Vec<HashMap<String, String>>>();
-        single_map_lists.push(single_maps);
-    };
-
-    single_map_lists.into_iter()
-        .fold(vec![HashMap::new()], |result_list, list_of_map| {
-            let mut new_result_list: Vec<HashMap<String, String>> = Vec::new();
-            for result_item in &result_list {
-                for map in &list_of_map {
-                    let mut result_map: HashMap<String, String> = HashMap::new();
-                    result_map.extend(result_item.to_owned());
-                    result_map.extend(map.to_owned());
-                    new_result_list.push(result_map);
-                }
-            }
-            new_result_list
-        })
-}
-
-
-#[test]
-fn parse_key_value_map_and_template_parser_test() {
-    let now_y_m_d = Local::now().format("%Y-%m-%d").to_string();
-
-    let builder = TemplateBuilder::new("https://raven/{{a}}/{{b}}/{{c}}");
-
-    let mut map = HashMap::new();
-    map.insert("a".to_owned(), vec!["a1".to_owned(), "a2".to_owned()]);
-    map.insert("b".to_owned(), vec!["b[1..2]".to_owned()]);
-    map.insert("c".to_owned(), vec!["c1-%Y-%m-%d".to_owned()]);
-
-    let expected = vec![
-        ["https://raven/a1/b1/c1-", &now_y_m_d].concat(),
-        ["https://raven/a1/b2/c1-", &now_y_m_d].concat(),
-        ["https://raven/a2/b1/c1-", &now_y_m_d].concat(),
-        ["https://raven/a2/b2/c1-", &now_y_m_d].concat()        
-    ];
-
-    let parsed_map_list = parse_key_value_map(map);
-    assert_eq!(parsed_map_list.len(), expected.len());
-    
-    for parsed in parsed_map_list {
-        let embded = builder.build_string(&parsed).unwrap();
-        assert!(expected.contains(&embded));
-    };
 }

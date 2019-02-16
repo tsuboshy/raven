@@ -11,10 +11,7 @@ use std::io::prelude::*;
 use std::env;
 
 fn main() {
-    let config_yaml_string = read_config_content()
-        .unwrap_or_else(|error| 
-            panic!(error.to_string())
-        );
+    let config_yaml_string = read_config_content().unwrap();
 
     println!("{}", config_yaml_string);
 

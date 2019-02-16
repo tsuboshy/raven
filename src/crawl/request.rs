@@ -2,6 +2,7 @@ use serde_derive::*;
 use std::collections::HashMap;
 use super::super::output::OutputMethod;
 
+#[derive(Debug)]
 pub struct Request {
     pub url: String,
     pub method: Method,
@@ -16,7 +17,7 @@ pub struct Request {
     pub body_params: HashMap<String, String>
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Clone)]
 pub enum Method {
     Get, Post
 }

@@ -5,6 +5,8 @@ extern crate log;
 extern crate combine;
 extern crate chrono;
 
+
+#[macro_use] pub mod macros;
 pub mod crawl;
 pub mod input;
 pub mod notify;
