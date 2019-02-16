@@ -1,11 +1,11 @@
-extern crate serde_yaml;
 extern crate raven;
+extern crate serde_yaml;
 
-use raven::input::{RavenConfig, LogConfig};
+use raven::crawl::request::Method::*;
+use raven::input::{LogConfig, RavenConfig};
+use raven::logger::log_level::LogLevel::*;
 use raven::notify::Notify;
 use raven::output::OutputMethod;
-use raven::logger::log_level::LogLevel::*;
-use raven::crawl::request::Method::*;
 
 static FULL_PARAMETER_YAML: &'static str = r#"
 name: "テスト"
@@ -65,13 +65,13 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
     let parsed = serde_yaml::from_str::<RavenConfig>(&FULL_PARAMETER_YAML).unwrap();
     assert_eq!(parsed.name, "テスト");
     assert_eq!(parsed.request.url, "https://www.craw.app/{{id}}/{{number}}");
-    
+
     let vars = &parsed.request.vars;
     assert_eq!(vars.len(), 1);
     assert_eq!(vars[0].get("id").unwrap()[0], "[1..10]");
     assert_eq!(vars[0].get("number").unwrap()[0], "1");
     assert_eq!(parsed.request.method, Post);
-    
+
     let headers = &parsed.request.headers;
     assert_eq!(headers.get("User-Agent").unwrap(), "raven");
     assert_eq!(headers.get("Content-Type").unwrap(), "application/json");
@@ -98,32 +98,34 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
 
     let notify = &parsed.notify;
     assert_eq!(notify.len(), 1);
-    let expected_notify = Notify::Slack { 
-      url: "https://slack.service/xxxx".to_owned(), 
-      channel: "raven-devops".to_owned(), 
-      mention: Some("here".to_owned())
+    let expected_notify = Notify::Slack {
+        url: "https://slack.service/xxxx".to_owned(),
+        channel: "raven-devops".to_owned(),
+        mention: Some("here".to_owned()),
     };
     assert_eq!(notify[0], expected_notify);
 
     let output = &parsed.output;
     assert_eq!(output.len(), 2);
-    let expected_local = OutputMethod::LocalFile { file_path: "/var/raven/%Y/%m/%d/{{id}}.html".to_owned() };
+    let expected_local = OutputMethod::LocalFile {
+        file_path: "/var/raven/%Y/%m/%d/{{id}}.html".to_owned(),
+    };
     let expected_s3 = OutputMethod::AmazonS3 {
-      region: "ap-nothereast-1".to_owned(),
-      bucket_name: "test_bucket".to_owned(),
-      object_key: "test_key".to_owned()
+        region: "ap-nothereast-1".to_owned(),
+        bucket_name: "test_bucket".to_owned(),
+        object_key: "test_key".to_owned(),
     };
     assert_eq!(output[0], expected_local);
     assert_eq!(output[1], expected_s3);
 
     let expected_log_config = LogConfig {
-      file_path: "/var/tmp/raven.log".to_owned(),
-      level: Warn
+        file_path: "/var/tmp/raven.log".to_owned(),
+        level: Warn,
     };
     assert_eq!(parsed.log, expected_log_config);
 }
 
-static MIN_CONFIG_YAML : &'static str = r#"
+static MIN_CONFIG_YAML: &'static str = r#"
 name: "テスト"
 request:
   url: "https://www.craw.app/"
@@ -143,11 +145,11 @@ fn it_should_success_to_parse_when_only_required_param_exists() {
     let parsed = serde_yaml::from_str::<RavenConfig>(&MIN_CONFIG_YAML).unwrap();
     assert_eq!(parsed.name, "テスト");
     assert_eq!(parsed.request.url, "https://www.craw.app/");
-    
+
     let vars = &parsed.request.vars;
     assert_eq!(vars.len(), 0);
     assert_eq!(parsed.request.method, Get);
-    
+
     let headers = &parsed.request.headers;
     assert_eq!(headers.len(), 0);
 
@@ -166,12 +168,14 @@ fn it_should_success_to_parse_when_only_required_param_exists() {
 
     let output = &parsed.output;
     assert_eq!(output.len(), 1);
-    let expected_local = OutputMethod::LocalFile { file_path: "/var/raven/%Y/%m/%d/{{id}}.html".to_owned() };
+    let expected_local = OutputMethod::LocalFile {
+        file_path: "/var/raven/%Y/%m/%d/{{id}}.html".to_owned(),
+    };
     assert_eq!(output[0], expected_local);
 
     let expected_log_config = LogConfig {
-      file_path: "/var/tmp/raven.log".to_owned(),
-      level: Debug
+        file_path: "/var/tmp/raven.log".to_owned(),
+        level: Debug,
     };
     assert_eq!(parsed.log, expected_log_config);
 }

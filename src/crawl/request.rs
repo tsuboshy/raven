@@ -1,6 +1,6 @@
+use super::super::output::OutputMethod;
 use serde_derive::*;
 use std::collections::HashMap;
-use super::super::output::OutputMethod;
 
 #[derive(Debug)]
 pub struct Request {
@@ -14,10 +14,11 @@ pub struct Request {
     pub max_retry: u8,
     pub val_map: HashMap<String, String>,
     pub query_params: HashMap<String, String>,
-    pub body_params: HashMap<String, String>
+    pub body_params: HashMap<String, String>,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Clone)]
 pub enum Method {
-    Get, Post
+    Get,
+    Post,
 }

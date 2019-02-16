@@ -1,16 +1,12 @@
+use chrono::{DateTime, Local};
 use serde_derive::Deserialize;
 use std::collections::HashMap;
-use chrono::{Local, DateTime};
 
-use super::request::RavenRequest;
 use super::raven_template_parser::{product_list, try_expand_list, TemplateBuilder};
+use super::request::RavenRequest;
 
 use crate::{
-    logger::log_level::LogLevel,
-    crawl::Request,
-    output::*,
-    notify::Notify,
-    crawl::request::Method,
+    crawl::request::Method, crawl::Request, logger::log_level::LogLevel, notify::Notify, output::*,
 };
 
 #[derive(Debug, PartialEq, Deserialize)]
@@ -27,7 +23,7 @@ pub struct RavenConfig {
     #[serde(default = "default_max_threads")]
     pub max_threads: u16,
 
-    pub log: LogConfig
+    pub log: LogConfig,
 }
 
 fn default_max_threads() -> u16 {
@@ -37,7 +33,7 @@ fn default_max_threads() -> u16 {
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct LogConfig {
     pub file_path: String,
-    pub level: LogLevel
+    pub level: LogLevel,
 }
 
 impl RavenConfig {
@@ -47,47 +43,61 @@ impl RavenConfig {
         let time_formatted_url = now.format(&self.request.url).to_string();
         let url_template_builder = TemplateBuilder::new(&time_formatted_url);
 
-        let mut output_method_template_builders: Vec<(&OutputMethod, TemplateBuilder)> = Vec::new();
+        let mut output_method_template_builders: Vec<(&OutputMethod, TemplateBuilder)> =
+            Vec::with_capacity(self.output.len());
         for output_method in &self.output {
             let file_name = match output_method {
                 OutputMethod::LocalFile { file_path } => file_path,
-                OutputMethod::AmazonS3 { object_key, .. } => object_key
+                OutputMethod::AmazonS3 { object_key, .. } => object_key,
             };
 
             let time_formatted_file_name = now.format(file_name).to_string();
-            output_method_template_builders.push((output_method, TemplateBuilder::new(&time_formatted_file_name)));
+            output_method_template_builders.push((
+                output_method,
+                TemplateBuilder::new(&time_formatted_file_name),
+            ));
         }
-        
-        let var_maps_list = self.request.vars.iter()
+
+        let var_maps_list = self
+            .request
+            .vars
+            .iter()
             .flat_map(|var_map| parse_key_value_map(var_map))
             .collect::<Vec<HashMap<String, String>>>();
 
-        let param_map_list = self.request.params.iter()
+        let param_map_list = self
+            .request
+            .params
+            .iter()
             .flat_map(|params| parse_key_value_map(params))
             .collect::<Vec<HashMap<String, String>>>();
-                
-        let mut request_list: Vec<Request> = Vec::with_capacity(var_maps_list.len() * param_map_list.len());
-           
+
+        let mut request_list: Vec<Request> =
+            Vec::with_capacity(var_maps_list.len() * param_map_list.len());
+
         for (var_map, param_map) in product_list(&var_maps_list, &param_map_list) {
-            request_list.push(self.create_crawler_request(var_map, param_map, &url_template_builder, &output_method_template_builders)?);
+            request_list.push(self.create_crawler_request(
+                var_map,
+                param_map,
+                &url_template_builder,
+                &output_method_template_builders,
+            )?);
         }
 
         Ok(request_list)
     }
 
-
-    fn create_crawler_request( 
-        &self, 
-        var_map: HashMap<String, String>, 
+    fn create_crawler_request(
+        &self,
+        var_map: HashMap<String, String>,
         param_map: HashMap<String, String>,
         url_builder: &TemplateBuilder,
         output_method_with_template_builders: &Vec<(&OutputMethod, TemplateBuilder)>,
-        ) -> Result<Request, String> 
-    {
+    ) -> Result<Request, String> {
         let mut all_val_map: HashMap<&str, &str> = HashMap::new();
         copy_ref_to_other_map!(var_map, all_val_map);
         copy_ref_to_other_map!(param_map, all_val_map);
-        
+
         let url = url_builder.build_string(&all_val_map)?;
         let mut output_method_list: Vec<OutputMethod> = Vec::new();
 
@@ -96,13 +106,13 @@ impl RavenConfig {
             let mut cloned_method = (*output_method).clone();
             cloned_method.update_file_path(embedded_val_file_name);
             output_method_list.push(cloned_method);
-        };
+        }
 
         let (query_map, body_map) = match self.request.method {
             Method::Get => (param_map, HashMap::new()),
-            Method::Post => (HashMap::new(), param_map)
+            Method::Post => (HashMap::new(), param_map),
         };
-        
+
         let request = Request {
             url,
             method: self.request.method.clone(),
@@ -120,7 +130,6 @@ impl RavenConfig {
         Ok(request)
     }
 }
-
 
 #[test]
 fn create_request_from_config_test() {
@@ -149,20 +158,18 @@ fn create_request_from_config_test() {
             output_charset: "UTF-8".to_owned(),
             timeout_in_seconds: 5,
             max_retry: 1,
-            params: vec![param_1, param_2]
+            params: vec![param_1, param_2],
         },
         notify: Vec::new(),
-        output: vec![
-            OutputMethod::AmazonS3 {
-                region: "ap-northeast-1".to_owned(),
-                bucket_name: "raven".to_owned(),
-                object_key: "test/%Y%m%d/{{id}}_{{offset}}_{{limit}}.html".to_owned()
-            }
-        ],
+        output: vec![OutputMethod::AmazonS3 {
+            region: "ap-northeast-1".to_owned(),
+            bucket_name: "raven".to_owned(),
+            object_key: "test/%Y%m%d/{{id}}_{{offset}}_{{limit}}.html".to_owned(),
+        }],
         max_threads: 1,
         log: LogConfig {
             file_path: "/var/tmp/log".to_owned(),
-            level: LogLevel::Debug
+            level: LogLevel::Debug,
         },
     };
 
@@ -200,9 +207,8 @@ fn create_request_from_config_test() {
             OutputMethod::AmazonS3 { object_key, .. } => object_key,
         };
         assert_eq!(expected_object_keys.contains(&file_name), true);
-    };
+    }
 }
-
 
 fn parse_key_value_map(map: &HashMap<String, Vec<String>>) -> Vec<HashMap<String, String>> {
     if map.is_empty() {
@@ -213,19 +219,21 @@ fn parse_key_value_map(map: &HashMap<String, Vec<String>>) -> Vec<HashMap<String
 
     let mut single_map_lists: Vec<Vec<HashMap<String, String>>> = vec![];
     for (key, values) in map.into_iter() {
-        let single_maps = values.iter()
+        let single_maps = values
+            .iter()
             .map(|val| now.format(val).to_string())
             .flat_map(|val| try_expand_list(&val))
-            .map(|val| { 
+            .map(|val| {
                 let mut single_map = HashMap::new();
                 single_map.insert(key.to_owned(), val);
                 single_map
             })
             .collect::<Vec<HashMap<String, String>>>();
         single_map_lists.push(single_maps);
-    };
+    }
 
-    single_map_lists.into_iter()
+    single_map_lists
+        .into_iter()
         .fold(vec![HashMap::new()], |result_list, list_of_map| {
             let mut new_result_list: Vec<HashMap<String, String>> = Vec::new();
             for result_item in &result_list {
@@ -239,7 +247,6 @@ fn parse_key_value_map(map: &HashMap<String, Vec<String>>) -> Vec<HashMap<String
             new_result_list
         })
 }
-
 
 #[test]
 fn parse_key_value_map_and_template_parser_test() {
@@ -257,14 +264,14 @@ fn parse_key_value_map_and_template_parser_test() {
         ["https://raven/a1/b1/c1-", &now_y_m_d].concat(),
         ["https://raven/a1/b2/c1-", &now_y_m_d].concat(),
         ["https://raven/a2/b1/c1-", &now_y_m_d].concat(),
-        ["https://raven/a2/b2/c1-", &now_y_m_d].concat()        
+        ["https://raven/a2/b2/c1-", &now_y_m_d].concat(),
     ];
 
     let parsed_map_list = parse_key_value_map(&map);
     assert_eq!(parsed_map_list.len(), expected.len());
-    
+
     for parsed in parsed_map_list {
         let embedded = builder.build_string(&parsed).unwrap();
         assert!(expected.contains(&embedded));
-    };
+    }
 }
