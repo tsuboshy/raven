@@ -2,6 +2,7 @@ use serde_derive::*;
 use std::collections::HashMap;
 use super::super::output::OutputMethod;
 
+#[derive(Debug)]
 pub struct Request {
     pub url: String,
     pub method: Method,
