@@ -15,7 +15,6 @@ macro_rules! hashmap {
     };
 }
 
-
 #[macro_export]
 macro_rules! copy_ref_to_other_map {
     ( $src:ident, $dest:ident ) => {

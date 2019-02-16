@@ -1,6 +1,6 @@
-use std::str::FromStr;
-use serde::de::{Deserialize, Visitor, Deserializer, Error, Unexpected};
+use serde::de::{Deserialize, Deserializer, Error, Unexpected, Visitor};
 use std::fmt;
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LogLevel {
@@ -8,7 +8,7 @@ pub enum LogLevel {
     Debug,
     Info,
     Warn,
-    Error
+    Error,
 }
 
 impl LogLevel {
@@ -18,11 +18,10 @@ impl LogLevel {
             LogLevel::Debug => "debug",
             LogLevel::Info => "info",
             LogLevel::Warn => "warn",
-            LogLevel::Error => "error"
+            LogLevel::Error => "error",
         }
     }
 }
-
 
 impl FromStr for LogLevel {
     type Err = String;
@@ -34,33 +33,41 @@ impl FromStr for LogLevel {
             "info" => Ok(LogLevel::Info),
             "warn" => Ok(LogLevel::Warn),
             "error" => Ok(LogLevel::Error),
-            invalid => Err(["invalid value for LogLevel: ".to_string(), invalid.to_string()].concat())
+            invalid => Err([
+                "invalid value for LogLevel: ".to_string(),
+                invalid.to_string(),
+            ]
+            .concat()),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for LogLevel {
     fn deserialize<D>(deserializer: D) -> Result<LogLevel, D::Error>
-        where
-            D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         deserializer.deserialize_str(LogLevelVisitor)
     }
-} 
+}
 
 struct LogLevelVisitor;
 impl<'de> Visitor<'de> for LogLevelVisitor {
     type Value = LogLevel;
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, r#"one of "trace", "debug", "info", "warn", "error" (case insensitive) ."#)
+        write!(
+            formatter,
+            r#"one of "trace", "debug", "info", "warn", "error" (case insensitive) ."#
+        )
     }
 
-    fn visit_str<E>(self, v: &str) -> Result<LogLevel, E> 
-        where E : Error
+    fn visit_str<E>(self, v: &str) -> Result<LogLevel, E>
+    where
+        E: Error,
     {
         match LogLevel::from_str(v) {
             Ok(log_level) => Ok(log_level),
-            Err(_) => Err(E::invalid_type(Unexpected::Str(v), &self))
+            Err(_) => Err(E::invalid_type(Unexpected::Str(v), &self)),
         }
     }
 }

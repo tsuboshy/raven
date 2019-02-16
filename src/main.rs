@@ -1,14 +1,14 @@
 // https://serde.rs
 // https://serde.rs/attributes.html#container-attributes
-extern crate serde_yaml;
 extern crate log;
 extern crate raven;
+extern crate serde_yaml;
 
 use raven::input::RavenConfig;
-use std::fs::File;
-use std::io::BufReader;
-use std::io::prelude::*;
 use std::env;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::BufReader;
 
 fn main() {
     let config_yaml_string = read_config_content().unwrap();
@@ -16,7 +16,7 @@ fn main() {
     println!("{}", config_yaml_string);
 
     let config = serde_yaml::from_str::<RavenConfig>(&config_yaml_string);
-    
+
     println!("{:?}", config);
 }
 
@@ -32,4 +32,3 @@ fn read_config_content() -> std::io::Result<String> {
     buf_reader.read_to_string(&mut content)?;
     Ok(content)
 }
-
