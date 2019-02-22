@@ -1,4 +1,4 @@
-use super::super::crawl::request::Method;
+use super::super::crawl::Method;
 use serde_derive::*;
 use std::collections::hash_map::HashMap;
 
