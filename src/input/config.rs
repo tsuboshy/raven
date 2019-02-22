@@ -6,7 +6,10 @@ use super::raven_template_parser::{product_list, try_expand_list, TemplateBuilde
 use super::request::RavenRequest;
 
 use crate::{
-    crawl::request::Method, crawl::Request, logger::log_level::LogLevel, notify::Notify, output::*,
+    crawl::{Method, Request},
+    logger::log_level::LogLevel,
+    notify::Notify,
+    output::*,
 };
 
 #[derive(Debug, PartialEq, Deserialize)]
