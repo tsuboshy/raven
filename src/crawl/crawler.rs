@@ -59,7 +59,7 @@ pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, Craw
                 response.copy_to(&mut response_body).unwrap();
                 let raven_respone = RavenResponse {
                     status: response.status().as_u16(),
-                    header: HashMap::new(),
+                    header: header_map_to_hash_map(response.headers()),
                     body: response_body,
                     mills_takes_to_complete_to_request: end_datetime - start_datetime,
                     retry_count,
@@ -136,6 +136,14 @@ where
         }
     }
     Ok(header_map)
+}
+
+fn header_map_to_hash_map(header_map: &HeaderMap) -> HashMap<String, Vec<u8>> {
+    let mut string_map: HashMap<String, Vec<u8>> = HashMap::new();
+    for (key, val) in header_map.iter() {
+        string_map.insert(key.as_str().to_owned(), val.as_ref().to_vec());
+    }
+    string_map
 }
 
 #[ignore]
