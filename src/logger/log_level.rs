@@ -33,11 +33,7 @@ impl FromStr for LogLevel {
             "info" => Ok(LogLevel::Info),
             "warn" => Ok(LogLevel::Warn),
             "error" => Ok(LogLevel::Error),
-            invalid => Err([
-                "invalid value for LogLevel: ".to_string(),
-                invalid.to_string(),
-            ]
-            .concat()),
+            invalid => Err(format!("invalid value for LogLevel: {}", invalid)),
         }
     }
 }

@@ -1,5 +1,5 @@
 use super::{
-    request::Method as RavenMethod, request::Request, response::CrawlerError,
+    request::Encoding, request::Method as RavenMethod, request::Request, response::CrawlerError,
     response::Response as RavenResponse,
 };
 
@@ -24,7 +24,7 @@ pub trait Crawler {
 
 /// execute crawl.
 /// if request ends up server error or timeout,
-/// this default retry to request up to request.retry_max
+/// this function retries to request up to request.retry_max
 pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, CrawlerError> {
     let header_maps = create_header_map(&request.header)?;
 
@@ -57,10 +57,12 @@ pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, Craw
                 let end_datetime = Local::now().timestamp_millis();
                 let mut response_body: Vec<u8> = vec![];
                 response.copy_to(&mut response_body).unwrap();
+                let body_converted_encoding: Vec<u8> =
+                    convert_encoding_if_need(&request.encoding, response_body);
                 let raven_respone = RavenResponse {
                     status: response.status().as_u16(),
                     header: header_map_to_hash_map(response.headers()),
-                    body: response_body,
+                    body: body_converted_encoding,
                     mills_takes_to_complete_to_request: end_datetime - start_datetime,
                     retry_count,
                 };
@@ -97,6 +99,14 @@ pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, Craw
                 }
             }
         }
+    }
+}
+
+fn convert_encoding_if_need(encoding: &Option<Encoding>, target: Vec<u8>) -> Vec<u8> {
+    if let Some(Encoding { input, output }) = encoding {
+        input.convert_to(output, target)
+    } else {
+        target
     }
 }
 
@@ -138,27 +148,32 @@ where
     Ok(header_map)
 }
 
-fn header_map_to_hash_map(header_map: &HeaderMap) -> HashMap<String, Vec<u8>> {
-    let mut string_map: HashMap<String, Vec<u8>> = HashMap::new();
+fn header_map_to_hash_map(header_map: &HeaderMap) -> HashMap<String, String> {
+    let mut string_map: HashMap<String, String> = HashMap::new();
     for (key, val) in header_map.iter() {
-        string_map.insert(key.as_str().to_owned(), val.as_ref().to_vec());
+        if let Ok(header_val) = String::from_utf8(val.as_ref().to_vec()) {
+            string_map.insert(key.as_str().to_owned(), header_val);
+        }
     }
     string_map
 }
 
-#[ignore]
+//#[ignore]
 #[test]
 fn try_crawler() {
+    use super::{charset::Charset, request::Encoding};
     struct TestCrawler;
     impl Crawler for TestCrawler {};
 
     let raven_request = Request {
-        url: "http://inet-ip.info".to_owned(),
+        url: "https://yakkun.com/sm/zukan/n213".to_owned(),
         method: RavenMethod::Get,
         header: hashmap!("User-Agent".to_owned() => "raven".to_owned()),
         ouput_methods: vec![],
-        input_charset: "UTF-8".to_owned(),
-        output_charset: "UTF-8".to_owned(),
+        encoding: Some(Encoding {
+            input: Charset::EucJp,
+            output: Charset::Utf8,
+        }),
         timeout: 1,
         max_retry: 1,
         val_map: HashMap::new(),
@@ -167,6 +182,7 @@ fn try_crawler() {
     };
 
     let response: RavenResponse = TestCrawler::crawl(&raven_request).unwrap();
+    dbg!(&response.header);
 
     use std::io::Write;
     let mut file = std::fs::File::create("/var/tmp/crawler_test.html").unwrap();

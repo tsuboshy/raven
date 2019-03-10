@@ -1,7 +1,10 @@
 use encoding_rs::*;
+use serde::de::{Deserialize, Deserializer, Error, Unexpected, Visitor};
+use std::borrow::Cow;
+use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Charset {
     Big5,
     EucJp,
@@ -90,6 +93,11 @@ impl Charset {
             XMacCyrillic => X_MAC_CYRILLIC,
         }
     }
+
+    pub fn convert_to(&self, other: &Charset, target: Vec<u8>) -> Vec<u8> {
+        let utf8: Cow<str> = self.get_encoding().decode(&target).0;
+        other.get_encoding().encode(utf8.as_ref()).0.to_vec()
+    }
 }
 
 impl FromStr for Charset {
@@ -137,6 +145,36 @@ impl FromStr for Charset {
             "windows_874" => Ok(Windows874),
             "x_mac_cyrillic" => Ok(XMacCyrillic),
             _ => Err(format!("{} is not supported!", s)),
+        }
+    }
+}
+
+struct CharsetVisitor;
+impl<'de> Deserialize<'de> for Charset {
+    fn deserialize<D>(deserializer: D) -> Result<Charset, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(CharsetVisitor)
+    }
+}
+
+impl<'de> Visitor<'de> for CharsetVisitor {
+    type Value = Charset;
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter,
+            r#"your charset is not supported! please check the document."#
+        )
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Charset, E>
+    where
+        E: Error,
+    {
+        match Charset::from_str(v) {
+            Ok(charset) => Ok(charset),
+            Err(_) => Err(E::invalid_type(Unexpected::Str(v), &self)),
         }
     }
 }

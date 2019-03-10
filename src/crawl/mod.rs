@@ -9,3 +9,4 @@ pub mod crawler;
 pub use self::crawler::Crawler;
 
 pub mod charset;
+pub use self::charset::Charset;
