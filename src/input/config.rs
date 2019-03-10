@@ -121,8 +121,7 @@ impl RavenConfig {
             method: self.request.method.clone(),
             header: self.request.headers.clone(),
             ouput_methods: output_method_list,
-            input_charset: self.request.input_charset.to_owned(),
-            output_charset: self.request.output_charset.to_owned(),
+            encoding: self.request.encoding.clone(),
             timeout: self.request.timeout_in_seconds,
             max_retry: self.request.max_retry,
             val_map: var_map,
@@ -157,8 +156,7 @@ fn create_request_from_config_test() {
             method: Method::Get,
             headers: HashMap::new(),
             vars: vec![var],
-            input_charset: "UTF-8".to_owned(),
-            output_charset: "UTF-8".to_owned(),
+            encoding: None,
             timeout_in_seconds: 5,
             max_retry: 1,
             params: vec![param_1, param_2],
@@ -199,8 +197,7 @@ fn create_request_from_config_test() {
     for request in requests.iter() {
         assert_eq!(request.method, Method::Get);
         assert_eq!(request.header.len(), 0);
-        assert_eq!(request.input_charset, "UTF-8");
-        assert_eq!(request.output_charset, "UTF-8");
+        assert_eq!(request.encoding, None);
         assert_eq!(request.timeout, 5);
         assert_eq!(request.max_retry, 1);
         assert_eq!(request.body_params.len(), 0);

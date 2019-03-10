@@ -1,4 +1,5 @@
-use super::super::crawl::Method;
+use crate::crawl::request::Encoding;
+use crate::crawl::Method;
 use serde_derive::*;
 use std::collections::hash_map::HashMap;
 
@@ -14,11 +15,7 @@ pub struct RavenRequest {
     #[serde(default)]
     pub vars: Vec<HashMap<String, Vec<String>>>,
 
-    #[serde(default = "utf8")]
-    pub input_charset: String,
-
-    #[serde(default = "utf8")]
-    pub output_charset: String,
+    pub encoding: Option<Encoding>,
 
     #[serde(default = "default_timeout")]
     pub timeout_in_seconds: u8,
@@ -28,10 +25,6 @@ pub struct RavenRequest {
 
     #[serde(default)]
     pub params: Vec<HashMap<String, Vec<String>>>,
-}
-
-fn utf8() -> String {
-    "UTF-8".to_string()
 }
 
 fn default_timeout() -> u8 {

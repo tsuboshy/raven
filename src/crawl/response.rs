@@ -23,7 +23,7 @@ macro_rules! other_error {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Response {
     pub status: u16,
-    pub header: HashMap<String, Vec<u8>>,
+    pub header: HashMap<String, String>,
     pub body: Vec<u8>,
     pub mills_takes_to_complete_to_request: i64,
     pub retry_count: u8,

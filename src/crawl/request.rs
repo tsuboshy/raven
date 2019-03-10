@@ -1,4 +1,5 @@
 use super::super::output::OutputMethod;
+use crate::crawl::charset::Charset;
 use serde_derive::*;
 use std::collections::HashMap;
 
@@ -8,8 +9,7 @@ pub struct Request {
     pub method: Method,
     pub header: HashMap<String, String>,
     pub ouput_methods: Vec<OutputMethod>,
-    pub input_charset: String,
-    pub output_charset: String,
+    pub encoding: Option<Encoding>,
     pub timeout: u8,
     pub max_retry: u8,
     pub val_map: HashMap<String, String>,
@@ -21,4 +21,10 @@ pub struct Request {
 pub enum Method {
     Get,
     Post,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq, Clone)]
+pub struct Encoding {
+    pub input: Charset,
+    pub output: Charset,
 }
