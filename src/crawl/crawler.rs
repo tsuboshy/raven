@@ -71,7 +71,7 @@ pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, Craw
                     return Ok(raven_respone);
                 } else if response.status().is_client_error() {
                     return Err(CrawlerError::ClientError(raven_respone));
-                } else if response.status().is_client_error() && retry_count >= request.max_retry {
+                } else if response.status().is_server_error() && retry_count >= request.max_retry {
                     return Err(CrawlerError::ServerError(raven_respone));
                 } else {
                     retry_count += 1;
