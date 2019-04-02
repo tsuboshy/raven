@@ -1,5 +1,5 @@
-use super::super::output::OutputMethod;
-use crate::crawl::charset::Charset;
+use crate::charset::*;
+use crate::output::OutputMethod;
 use serde_derive::*;
 use std::collections::HashMap;
 

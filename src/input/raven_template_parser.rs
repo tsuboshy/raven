@@ -11,8 +11,10 @@ pub struct TemplateBuilder {
 
 impl TemplateBuilder {
     pub fn new(target_string: &str) -> TemplateBuilder {
-        let parsed_tokens = parse_to_token(target_string)
-            .expect(&["failed to parse template string:", target_string].join(" "));
+        let parsed_tokens = parse_to_token(target_string).expect(&format!(
+            "failed to parse template string: {}",
+            target_string
+        ));
 
         TemplateBuilder {
             tokens: parsed_tokens,
@@ -50,7 +52,7 @@ impl TemplateBuilder {
                 Token::Key(key) => match key_map.get(key) {
                     Some(value) => built.push_str(value.as_ref()),
                     None => {
-                        return Err(["could not find value:".to_owned(), key.to_owned()].join(" "));
+                        return Err(format!("could not find value: {}", key));
                     }
                 },
             }
