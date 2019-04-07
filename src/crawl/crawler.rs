@@ -59,7 +59,7 @@ pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, Craw
                 response.copy_to(&mut response_body).unwrap();
                 let body_converted_encoding: Vec<u8> =
                     convert_encoding_if_need(&request.encoding, response_body);
-                let raven_respone = RavenResponse {
+                let raven_response = RavenResponse {
                     status: response.status().as_u16(),
                     header: header_map_to_hash_map(response.headers()),
                     body: body_converted_encoding,
@@ -68,11 +68,11 @@ pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, Craw
                 };
 
                 if response.status().is_success() {
-                    return Ok(raven_respone);
+                    return Ok(raven_response);
                 } else if response.status().is_client_error() {
-                    return Err(CrawlerError::ClientError(raven_respone));
+                    return Err(CrawlerError::ClientError(raven_response));
                 } else if response.status().is_server_error() && retry_count >= request.max_retry {
-                    return Err(CrawlerError::ServerError(raven_respone));
+                    return Err(CrawlerError::ServerError(raven_response));
                 } else {
                     retry_count += 1;
                     continue;
@@ -120,7 +120,7 @@ where
 
     let mut query_strings: Vec<String> = vec![];
     for (key, val) in param_map {
-        query_strings.push([key.as_ref(), val.as_ref()].join("="));
+        query_strings.push(format!("{}={}", key.as_ref(), val.as_ref()));
     }
 
     Some(query_strings.join("&"))
@@ -161,7 +161,8 @@ fn header_map_to_hash_map(header_map: &HeaderMap) -> HashMap<String, String> {
 //#[ignore]
 #[test]
 fn try_crawler() {
-    use super::{charset::Charset, request::Encoding};
+    use super::request::Encoding;
+    use crate::charset::Charset;
     struct TestCrawler;
     impl Crawler for TestCrawler {};
 
