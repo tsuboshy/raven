@@ -8,7 +8,7 @@ pub struct Request {
     pub url: String,
     pub method: Method,
     pub header: HashMap<String, String>,
-    pub ouput_methods: Vec<OutputMethod>,
+    pub output_methods: Vec<OutputMethod>,
     pub encoding: Option<Encoding>,
     pub timeout: u8,
     pub max_retry: u8,

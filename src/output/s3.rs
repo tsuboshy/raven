@@ -1,4 +1,4 @@
-use crate::mime::Mime;
+use crate::mime::{Mime, TextMime};
 use rusoto_core::ByteStream;
 pub use rusoto_core::Region;
 use rusoto_s3::{PutObjectError, PutObjectOutput, PutObjectRequest, S3Client, S3};
@@ -72,8 +72,9 @@ fn s3_upload_test() {
         region: "ap-northeast-1".to_owned(),
         bucket_name: "crow-dev".to_owned(),
         object_key: "test_raven1.txt".to_owned(),
-        content_type: &Mime::TextPlain {
-            charset: Charset::Utf8,
+        content_type: &Mime::Text {
+            charset: Some(Charset::Utf8),
+            text_type: TextMime::TextPlain,
         },
         content: test_strings.as_bytes(),
     };

@@ -3,6 +3,7 @@ use super::{
     response::Response as RavenResponse,
 };
 
+use crate::mime::Mime;
 use chrono::Local;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{Client, Error, Response};
@@ -65,6 +66,7 @@ pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, Craw
                     body: body_converted_encoding,
                     mills_takes_to_complete_to_request: end_datetime - start_datetime,
                     retry_count,
+                    content_type: Mime::ApplicationOctetStream,
                 };
 
                 if response.status().is_success() {
@@ -170,7 +172,7 @@ fn try_crawler() {
         url: "https://yakkun.com/sm/zukan/n213".to_owned(),
         method: RavenMethod::Get,
         header: hashmap!("User-Agent".to_owned() => "raven".to_owned()),
-        ouput_methods: vec![],
+        output_methods: vec![],
         encoding: Some(Encoding {
             input: Charset::EucJp,
             output: Charset::Utf8,

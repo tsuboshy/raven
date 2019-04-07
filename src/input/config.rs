@@ -120,7 +120,7 @@ impl RavenConfig {
             url,
             method: self.request.method.clone(),
             header: self.request.headers.clone(),
-            ouput_methods: output_method_list,
+            output_methods: output_method_list,
             encoding: self.request.encoding.clone(),
             timeout: self.request.timeout_in_seconds,
             max_retry: self.request.max_retry,
@@ -202,7 +202,7 @@ fn create_request_from_config_test() {
         assert_eq!(request.max_retry, 1);
         assert_eq!(request.body_params.len(), 0);
         assert_eq!(expected_url.contains(&request.url), true);
-        let file_name = match &request.ouput_methods[0] {
+        let file_name = match &request.output_methods[0] {
             OutputMethod::LocalFile { .. } => panic!("must not be LocalFile."),
             OutputMethod::AmazonS3 { object_key, .. } => object_key,
         };

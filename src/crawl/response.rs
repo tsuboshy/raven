@@ -1,3 +1,4 @@
+use crate::mime::Mime;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -27,4 +28,5 @@ pub struct Response {
     pub body: Vec<u8>,
     pub mills_takes_to_complete_to_request: i64,
     pub retry_count: u8,
+    pub content_type: Mime,
 }
