@@ -35,6 +35,23 @@ use self::Mime::*;
 use self::TextMime::*;
 use std::str::FromStr;
 
+impl Mime {
+    pub fn set_charset_when_text_mime(&mut self, new_charset: Charset) {
+        match self {
+            Text { charset, .. } => *charset = Some(new_charset),
+
+            _ => (),
+        }
+    }
+
+    pub fn is_text(&self) -> bool {
+        match self {
+            Text { .. } => true,
+            _ => false,
+        }
+    }
+}
+
 impl ToString for Mime {
     fn to_string(&self) -> String {
         match self {

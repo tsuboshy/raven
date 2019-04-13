@@ -4,6 +4,7 @@ extern crate log;
 extern crate raven;
 extern crate serde_yaml;
 
+use raven::application::*;
 use raven::input::RavenConfig;
 use std::env;
 use std::fs::File;
@@ -18,11 +19,13 @@ fn main() {
     let config = serde_yaml::from_str::<RavenConfig>(&config_yaml_string);
 
     println!("{:?}", config);
+
+    run_raven_application::<Prd>(config.unwrap());
 }
 
 fn read_config_content() -> std::io::Result<String> {
     let args: Vec<String> = env::args().collect();
-    if args.len() == 0 {
+    if args.len() == 1 {
         panic!("please pass config file.");
     }
 

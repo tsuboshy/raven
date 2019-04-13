@@ -22,7 +22,7 @@ pub enum OutputMethod {
 impl OutputMethod {
     pub fn update_file_path(&mut self, new_file_path: String) {
         match self {
-            OutputMethod::LocalFile { ref mut file_path } => *file_path = new_file_path,
+            OutputMethod::LocalFile { file_path } => *file_path = new_file_path,
             OutputMethod::AmazonS3 {
                 ref mut object_key, ..
             } => *object_key = new_file_path,
@@ -31,9 +31,9 @@ impl OutputMethod {
 }
 
 /// Output trait supplies to output data to some storage such as local storage and amazon s3 and so on.
-trait Output {
+pub trait Output {
     fn output_crawled_data(
-        crawled_data: Vec<u8>,
+        crawled_data: &[u8],
         mime: Mime,
         method: OutputMethod,
     ) -> Result<(), OutputError> {
@@ -42,7 +42,7 @@ trait Output {
 }
 
 pub fn default_impl_output_crawled_data(
-    crawled_data: Vec<u8>,
+    crawled_data: &[u8],
     content_type: Mime,
     method: OutputMethod,
 ) -> Result<(), OutputError> {
@@ -50,7 +50,7 @@ pub fn default_impl_output_crawled_data(
         OutputMethod::LocalFile { file_path } => {
             let local_file_request = LocalFileRequest {
                 file_path,
-                content: &crawled_data,
+                content: crawled_data,
             };
             write_to_local(local_file_request)?;
             Ok(())
@@ -66,7 +66,7 @@ pub fn default_impl_output_crawled_data(
                 bucket_name,
                 object_key,
                 content_type: &content_type,
-                content: &crawled_data,
+                content: crawled_data,
             };
             write_to_s3(s3_request)?;
             Ok(())

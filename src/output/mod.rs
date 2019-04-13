@@ -1,5 +1,6 @@
 pub mod output_method;
 
+pub use output_method::Output;
 pub use output_method::OutputMethod;
 pub use output_method::OutputMethod::*;
 

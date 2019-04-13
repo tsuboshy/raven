@@ -1,11 +1,15 @@
 extern crate chrono;
 extern crate combine;
+extern crate futures;
+extern crate futures_cpupool;
+#[macro_use]
 extern crate log;
 extern crate rusoto_core;
 extern crate rusoto_s3;
 extern crate serde;
 extern crate serde_derive;
 extern crate serde_yaml;
+
 #[macro_use]
 extern crate lazy_static;
 
@@ -17,5 +21,6 @@ pub mod logger;
 pub mod notify;
 pub mod output;
 
+pub mod application;
 pub mod charset;
 pub mod mime;

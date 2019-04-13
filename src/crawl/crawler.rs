@@ -1,9 +1,9 @@
 use super::{
-    request::Encoding, request::Method as RavenMethod, request::Request, response::CrawlerError,
-    response::Response as RavenResponse,
+    request::Encoding, request::Method as RavenMethod, request::Request,
+    response::CrawlResult as RavenResponse, response::CrawlerError,
 };
 
-use crate::mime::Mime;
+use crate::mime::{Mime, TextMime};
 use chrono::Local;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{Client, Error, Response};
@@ -29,15 +29,11 @@ pub trait Crawler {
 pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, CrawlerError> {
     let header_maps = create_header_map(&request.header)?;
 
-    let client_result = Client::builder()
+    let client = Client::builder()
         .timeout(Duration::from_secs(request.timeout.into()))
         .default_headers(header_maps)
-        .build();
-
-    let client: Client = match client_result {
-        Ok(client) => client,
-        Err(err) => return Err(other_error!("failed to build http client: {}", err)),
-    };
+        .build()
+        .map_err(|err| other_error!("failed to build http client: {}", err))?;
 
     let url = match create_query_strings(&request.query_params) {
         Some(query_strings) => format!("{}?{}", &request.url, query_strings),
@@ -57,16 +53,33 @@ pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, Craw
             Ok(ref mut response) => {
                 let end_datetime = Local::now().timestamp_millis();
                 let mut response_body: Vec<u8> = vec![];
-                response.copy_to(&mut response_body).unwrap();
-                let body_converted_encoding: Vec<u8> =
-                    convert_encoding_if_need(&request.encoding, response_body);
+                response.copy_to(&mut response_body).map_err(|e: Error| {
+                    CrawlerError::OtherError {
+                        error_detail: e.to_string(),
+                    }
+                })?;
+
+                let mut response_content_type = response
+                    .headers()
+                    .get("Content-Type")
+                    .and_then(|header_value: &HeaderValue| header_value.to_str().ok())
+                    .and_then(|mime_str| Mime::from_str(mime_str).ok())
+                    .or_else(|| text_plain_if_input_charset_setting_exists(&request.encoding))
+                    .unwrap_or(Mime::ApplicationOctetStream);
+
+                let body_converted_encoding: Vec<u8> = convert_encoding_if_need(
+                    &request.encoding,
+                    &mut response_content_type,
+                    response_body,
+                )?;
+
                 let raven_response = RavenResponse {
                     status: response.status().as_u16(),
                     header: header_map_to_hash_map(response.headers()),
                     body: body_converted_encoding,
                     mills_takes_to_complete_to_request: end_datetime - start_datetime,
                     retry_count,
-                    content_type: Mime::ApplicationOctetStream,
+                    content_type: response_content_type,
                 };
 
                 if response.status().is_success() {
@@ -104,15 +117,50 @@ pub fn default_impl_for_crawler(request: &Request) -> Result<RavenResponse, Craw
     }
 }
 
-fn convert_encoding_if_need(encoding: &Option<Encoding>, target: Vec<u8>) -> Vec<u8> {
-    if let Some(Encoding { input, output }) = encoding {
-        input.convert_to(output, target)
+fn convert_encoding_if_need(
+    encoding_setting: &Option<Encoding>,
+    detected_mime: &mut Mime,
+    target: Vec<u8>,
+) -> Result<Vec<u8>, CrawlerError> {
+    if let Some(Encoding { input, output }) = encoding_setting {
+        match detected_mime {
+            Mime::Text { charset, .. } => {
+                let from_charset =
+                    input
+                        .clone()
+                        .or_else(|| charset.clone())
+                        .ok_or(CrawlerError::CharsetConversionError {
+                        error_detail:
+                            "failed to detect charset. please configure input charset in yaml file."
+                                .to_owned(),
+                    })?;
+                *charset = Some(output.clone());
+                Ok(from_charset.convert_to(output, target))
+            }
+
+            _ => Ok(target),
+        }
     } else {
-        target
+        Ok(target)
     }
 }
 
-pub fn create_query_strings<T>(param_map: &HashMap<T, T>) -> Option<String>
+fn text_plain_if_input_charset_setting_exists(encoding_setting: &Option<Encoding>) -> Option<Mime> {
+    if let Some(Encoding {
+        input: Some(input_encoding),
+        ..
+    }) = encoding_setting
+    {
+        Some(Mime::Text {
+            text_type: TextMime::TextPlain,
+            charset: Some(input_encoding.clone()),
+        })
+    } else {
+        None
+    }
+}
+
+fn create_query_strings<T>(param_map: &HashMap<T, T>) -> Option<String>
 where
     T: Eq + Hash + AsRef<str>,
 {
@@ -128,7 +176,7 @@ where
     Some(query_strings.join("&"))
 }
 
-pub fn create_header_map<T>(headers: &HashMap<T, T>) -> Result<HeaderMap, CrawlerError>
+fn create_header_map<T>(headers: &HashMap<T, T>) -> Result<HeaderMap, CrawlerError>
 where
     T: Eq + Hash + AsRef<str>,
 {
@@ -174,7 +222,7 @@ fn try_crawler() {
         header: hashmap!("User-Agent".to_owned() => "raven".to_owned()),
         output_methods: vec![],
         encoding: Some(Encoding {
-            input: Charset::EucJp,
+            input: Some(Charset::EucJp),
             output: Charset::Utf8,
         }),
         timeout: 1,
