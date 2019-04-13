@@ -94,7 +94,7 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
     assert_eq!(parsed.request.timeout_in_seconds, 30);
     assert_eq!(parsed.request.max_retry, 5);
     let encoding = parsed.request.encoding.unwrap();
-    assert_eq!(encoding.input, Charset::Utf8);
+    assert_eq!(encoding.input, Some(Charset::Utf8));
     assert_eq!(encoding.output, Charset::Utf8);
 
     assert_eq!(parsed.max_threads, 10);
@@ -179,4 +179,44 @@ fn it_should_success_to_parse_when_only_required_param_exists() {
         level: Debug,
     };
     assert_eq!(parsed.log, expected_log_config);
+}
+
+static YAKKUN: &'static str = r#"
+name: "テスト"
+request:
+  url: "https://img.yakkun.com/poke/sm/n{{id}}.gif"
+  vars:
+    - id:
+        - "[1..10]"
+  method: Get
+  timeout_in_seconds: 30
+  max_retry: 5
+
+max_threads : 2
+
+
+notify:
+  - slack:
+      url: "https://slack.service/xxxx"
+      channel: "raven-devops"
+      mention: "here"
+
+output:
+  - local_file:
+      file_path: "/var/raven/%Y/%m/%d/{{id}}.html"
+
+  - amazon_s3:
+      region: "ap-notheast-1"
+      bucket_name: "crow-dev"
+      object_key: "{{id}}.gif"
+
+log:
+  file_path: "/var/tmp/raven.log"
+  level: "warn"
+"#;
+
+#[test]
+fn test_yakkun() {
+    let parsed = serde_yaml::from_str::<RavenConfig>(&YAKKUN).unwrap();
+    dbg!(dbg!(parsed).create_crawler_requests());
 }

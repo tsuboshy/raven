@@ -78,7 +78,21 @@ impl RavenConfig {
         let mut request_list: Vec<Request> =
             Vec::with_capacity(var_maps_list.len() * param_map_list.len());
 
-        for (var_map, param_map) in product_list(&var_maps_list, &param_map_list) {
+        let non_empty_var_maps_list = if var_maps_list.is_empty() {
+            vec![HashMap::new()]
+        } else {
+            var_maps_list
+        };
+
+        let non_empty_param_maps_list = if param_map_list.is_empty() {
+            vec![HashMap::new()]
+        } else {
+            param_map_list
+        };
+
+        for (var_map, param_map) in
+            product_list(&non_empty_var_maps_list, &non_empty_param_maps_list)
+        {
             request_list.push(self.create_crawler_request(
                 var_map,
                 param_map,

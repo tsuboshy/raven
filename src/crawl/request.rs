@@ -25,6 +25,6 @@ pub enum Method {
 
 #[derive(Debug, Deserialize, PartialEq, Eq, Clone)]
 pub struct Encoding {
-    pub input: Charset,
+    pub input: Option<Charset>,
     pub output: Charset,
 }

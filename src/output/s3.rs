@@ -1,4 +1,4 @@
-use crate::mime::{Mime, TextMime};
+use crate::mime::Mime;
 use rusoto_core::ByteStream;
 pub use rusoto_core::Region;
 use rusoto_s3::{PutObjectError, PutObjectOutput, PutObjectRequest, S3Client, S3};
@@ -67,6 +67,7 @@ pub struct S3WriterError(pub String);
 #[ignore]
 fn s3_upload_test() {
     use crate::charset::Charset;
+    use crate::mime::TextMime;
     let test_strings = "テストだよーん";
     let s3_request = S3WriteFileRequest {
         region: "ap-northeast-1".to_owned(),

@@ -1,13 +1,15 @@
 use crate::mime::Mime;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum CrawlerError {
-    ClientError(Response),
+    ClientError(CrawlResult),
 
-    ServerError(Response),
+    ServerError(CrawlResult),
 
     TimeoutError { timeout_second: u8, retry_count: u8 },
+
+    CharsetConversionError { error_detail: String },
 
     OtherError { error_detail: String },
 }
@@ -22,7 +24,7 @@ macro_rules! other_error {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Response {
+pub struct CrawlResult {
     pub status: u16,
     pub header: HashMap<String, String>,
     pub body: Vec<u8>,
