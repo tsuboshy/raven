@@ -1,6 +1,7 @@
-use serde::de::{Deserialize, Deserializer, Error, Unexpected, Visitor};
 use std::fmt;
 use std::str::FromStr;
+
+use serde::de::{Deserialize, Deserializer, Error, Unexpected, Visitor};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LogLevel {
@@ -40,8 +41,8 @@ impl FromStr for LogLevel {
 
 impl<'de> Deserialize<'de> for LogLevel {
     fn deserialize<D>(deserializer: D) -> Result<LogLevel, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         deserializer.deserialize_str(LogLevelVisitor)
     }
@@ -58,8 +59,8 @@ impl<'de> Visitor<'de> for LogLevelVisitor {
     }
 
     fn visit_str<E>(self, v: &str) -> Result<LogLevel, E>
-    where
-        E: Error,
+        where
+            E: Error,
     {
         match LogLevel::from_str(v) {
             Ok(log_level) => Ok(log_level),

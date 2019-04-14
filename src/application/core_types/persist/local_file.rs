@@ -1,16 +1,18 @@
-use std::error::Error;
-use std::fs::create_dir_all;
-use std::fs::OpenOptions;
-use std::io::{BufWriter, Error as IOError, Read, Write};
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct LocalFileRequest<'a> {
-    pub file_path: String,
-    pub content: &'a [u8],
-}
+use crate::application::core_types::persist::PersistError;
+use std::{
+    error::Error,
+    fs::{create_dir_all, OpenOptions},
+    io::{BufWriter, Error as IOError, Write},
+};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct FailedToWriteLocal(pub String);
+
+impl From<FailedToWriteLocal> for PersistError {
+    fn from(e: FailedToWriteLocal) -> Self {
+        PersistError::FailedToWriteLocalFile(e.0)
+    }
+}
 
 impl From<IOError> for FailedToWriteLocal {
     fn from(e: IOError) -> Self {
@@ -18,8 +20,8 @@ impl From<IOError> for FailedToWriteLocal {
     }
 }
 
-pub fn write_to_local(request: LocalFileRequest) -> Result<(), FailedToWriteLocal> {
-    let split_by_slash: Vec<&str> = request.file_path.split("/").collect();
+pub fn write_to_local(file_path: &str, content: &[u8]) -> Result<(), FailedToWriteLocal> {
+    let split_by_slash: Vec<&str> = file_path.split("/").collect();
     if let Some((_, dir_names)) = split_by_slash.split_last() {
         if dir_names.len() != 0 {
             create_dir_all(dir_names.join("/"))?;
@@ -28,10 +30,10 @@ pub fn write_to_local(request: LocalFileRequest) -> Result<(), FailedToWriteLoca
             .create(true)
             .write(true)
             .truncate(true)
-            .open(request.file_path)?;
+            .open(file_path)?;
 
         let mut writer = BufWriter::new(target_file);
-        writer.write_all(request.content)?;
+        writer.write_all(content)?;
         writer.flush()?;
         Ok(())
     } else {
@@ -42,17 +44,14 @@ pub fn write_to_local(request: LocalFileRequest) -> Result<(), FailedToWriteLoca
 #[test]
 fn test_write_to_local() {
     use std::fs::File;
-    use std::io::BufReader;
+    use std::io::{BufReader, Read};
+
     // arrange
-    let test_file_path = "/var/tmp/raven/test.txt";
+    let test_file_path = "/var/tmp/application/test.txt";
     let test_content = "testだよーん";
-    let local_request = LocalFileRequest {
-        file_path: test_file_path.to_owned(),
-        content: test_content.as_bytes(),
-    };
 
     // act
-    let result = write_to_local(local_request);
+    let result = write_to_local(test_file_path, test_content.as_bytes());
 
     // assert
     assert_eq!(Ok(()), result);

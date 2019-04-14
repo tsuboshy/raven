@@ -1,5 +1,10 @@
-use crate::charset::Charset;
+use std::str::FromStr;
 use std::string::ToString;
+
+use crate::charset::Charset;
+
+use self::Mime::*;
+use self::TextMime::*;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Mime {
@@ -30,10 +35,6 @@ pub enum TextMime {
     TextXml,
     TextOther { text_mime_type_string: String },
 }
-
-use self::Mime::*;
-use self::TextMime::*;
-use std::str::FromStr;
 
 impl Mime {
     pub fn set_charset_when_text_mime(&mut self, new_charset: Charset) {

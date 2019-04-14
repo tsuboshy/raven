@@ -75,7 +75,7 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
     assert_eq!(parsed.request.method, Post);
 
     let headers = &parsed.request.headers;
-    assert_eq!(headers.get("User-Agent").unwrap(), "raven");
+    assert_eq!(headers.get("User-Agent").unwrap(), "application");
     assert_eq!(headers.get("Content-Type").unwrap(), "application/json");
 
     let params = &parsed.request.params;
@@ -103,7 +103,7 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
     assert_eq!(notify.len(), 1);
     let expected_notify = Notify::Slack {
         url: "https://slack.service/xxxx".to_owned(),
-        channel: "raven-devops".to_owned(),
+        channel: "application-devops".to_owned(),
         mention: Some("here".to_owned()),
     };
     assert_eq!(notify[0], expected_notify);
@@ -111,7 +111,7 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
     let output = &parsed.output;
     assert_eq!(output.len(), 2);
     let expected_local = OutputMethod::LocalFile {
-        file_path: "/var/raven/%Y/%m/%d/{{id}}.html".to_owned(),
+        file_path: "/var/application/%Y/%m/%d/{{id}}.html".to_owned(),
     };
     let expected_s3 = OutputMethod::AmazonS3 {
         region: "ap-nothereast-1".to_owned(),
@@ -122,7 +122,7 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
     assert_eq!(output[1], expected_s3);
 
     let expected_log_config = LogConfig {
-        file_path: "/var/tmp/raven.log".to_owned(),
+        file_path: "/var/tmp/application.log".to_owned(),
         level: Warn,
     };
     assert_eq!(parsed.log, expected_log_config);
@@ -170,12 +170,12 @@ fn it_should_success_to_parse_when_only_required_param_exists() {
     let output = &parsed.output;
     assert_eq!(output.len(), 1);
     let expected_local = OutputMethod::LocalFile {
-        file_path: "/var/raven/%Y/%m/%d/{{id}}.html".to_owned(),
+        file_path: "/var/application/%Y/%m/%d/{{id}}.html".to_owned(),
     };
     assert_eq!(output[0], expected_local);
 
     let expected_log_config = LogConfig {
-        file_path: "/var/tmp/raven.log".to_owned(),
+        file_path: "/var/tmp/application.log".to_owned(),
         level: Debug,
     };
     assert_eq!(parsed.log, expected_log_config);
