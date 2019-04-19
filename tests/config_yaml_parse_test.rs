@@ -1,12 +1,13 @@
 extern crate raven;
 extern crate serde_yaml;
 
+use raven::application::command_runner::config::config::RavenConfig;
+use raven::application::command_runner::config::log::LogConfig;
+use raven::application::core_types::crawler::request::Method::{Get, Post};
+use raven::application::core_types::logger::LogLevel::{Debug, Warn};
+use raven::application::core_types::notify_method::{Notify, NotifyMethod};
+use raven::application::core_types::persist::PersistMethod;
 use raven::charset::Charset;
-use raven::crawl::request::Method::*;
-use raven::input::{LogConfig, RavenConfig};
-use raven::logger::log_level::LogLevel::*;
-use raven::notify::Notify;
-use raven::output::OutputMethod;
 
 static FULL_PARAMETER_YAML: &'static str = r#"
 name: "テスト"
@@ -50,7 +51,7 @@ notify:
 
 output:
   - local_file:
-      file_path: "/var/raven/%Y/%m/%d/{{id}}.html"
+      file_path: "/var/application/%Y/%m/%d/{{id}}.html"
 
   - amazon_s3:
       region: "ap-nothereast-1"
@@ -58,7 +59,7 @@ output:
       object_key: "test_key"
 
 log:
-  file_path: "/var/tmp/raven.log"
+  file_path: "/var/tmp/application.log"
   level: "warn"
 "#;
 
@@ -75,7 +76,7 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
     assert_eq!(parsed.request.method, Post);
 
     let headers = &parsed.request.headers;
-    assert_eq!(headers.get("User-Agent").unwrap(), "application");
+    assert_eq!(headers.get("User-Agent").unwrap(), "raven");
     assert_eq!(headers.get("Content-Type").unwrap(), "application/json");
 
     let params = &parsed.request.params;
@@ -101,19 +102,19 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
 
     let notify = &parsed.notify;
     assert_eq!(notify.len(), 1);
-    let expected_notify = Notify::Slack {
+    let expected_notify = NotifyMethod::Slack {
         url: "https://slack.service/xxxx".to_owned(),
-        channel: "application-devops".to_owned(),
+        channel: "raven-devops".to_owned(),
         mention: Some("here".to_owned()),
     };
     assert_eq!(notify[0], expected_notify);
 
     let output = &parsed.output;
     assert_eq!(output.len(), 2);
-    let expected_local = OutputMethod::LocalFile {
+    let expected_local = PersistMethod::LocalFile {
         file_path: "/var/application/%Y/%m/%d/{{id}}.html".to_owned(),
     };
-    let expected_s3 = OutputMethod::AmazonS3 {
+    let expected_s3 = PersistMethod::AmazonS3 {
         region: "ap-nothereast-1".to_owned(),
         bucket_name: "test_bucket".to_owned(),
         object_key: "test_key".to_owned(),
@@ -136,10 +137,10 @@ request:
 
 output:
   - local_file:
-      file_path: "/var/raven/%Y/%m/%d/{{id}}.html"
+      file_path: "/var/application/%Y/%m/%d/{{id}}.html"
 
 log:
-  file_path: "/var/tmp/raven.log"
+  file_path: "/var/tmp/application.log"
   level: "DEBUG"
 "#;
 
@@ -169,7 +170,7 @@ fn it_should_success_to_parse_when_only_required_param_exists() {
 
     let output = &parsed.output;
     assert_eq!(output.len(), 1);
-    let expected_local = OutputMethod::LocalFile {
+    let expected_local = PersistMethod::LocalFile {
         file_path: "/var/application/%Y/%m/%d/{{id}}.html".to_owned(),
     };
     assert_eq!(output[0], expected_local);
@@ -179,44 +180,4 @@ fn it_should_success_to_parse_when_only_required_param_exists() {
         level: Debug,
     };
     assert_eq!(parsed.log, expected_log_config);
-}
-
-static YAKKUN: &'static str = r#"
-name: "テスト"
-request:
-  url: "https://img.yakkun.com/poke/sm/n{{id}}.gif"
-  vars:
-    - id:
-        - "[1..10]"
-  method: Get
-  timeout_in_seconds: 30
-  max_retry: 5
-
-max_threads : 2
-
-
-notify:
-  - slack:
-      url: "https://slack.service/xxxx"
-      channel: "raven-devops"
-      mention: "here"
-
-output:
-  - local_file:
-      file_path: "/var/raven/%Y/%m/%d/{{id}}.html"
-
-  - amazon_s3:
-      region: "ap-notheast-1"
-      bucket_name: "crow-dev"
-      object_key: "{{id}}.gif"
-
-log:
-  file_path: "/var/tmp/raven.log"
-  level: "warn"
-"#;
-
-#[test]
-fn test_yakkun() {
-    let parsed = serde_yaml::from_str::<RavenConfig>(&YAKKUN).unwrap();
-    dbg!(dbg!(parsed).create_crawler_requests());
 }

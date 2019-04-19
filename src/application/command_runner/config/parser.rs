@@ -26,7 +26,7 @@ impl TemplateBuilder {
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use raven::application::config::raven_template_parser::TemplateBuilder;
+    /// use raven::application::command_runner::config::parser::TemplateBuilder;
     ///
     /// let mut key_val_map: HashMap<String, String> = HashMap::new();
     /// key_val_map.insert("id".to_owned(), "tsuboshy".to_owned());
@@ -142,7 +142,7 @@ fn parse_to_token_test() {
 /// try to expand numeric list strings.
 ///
 /// ```
-/// use application::input::raven_template_parser::try_expand_numeric_list;
+/// use raven::application::command_runner::config::parser::try_expand_numeric_list;
 ///
 /// let numeric_list_pattern = "[1..5]";
 /// let result1 = try_expand_numeric_list(numeric_list_pattern);
@@ -211,7 +211,7 @@ pub fn try_expand_numeric_list(target_string: &str) -> Vec<String> {
 /// create product list of refs.
 ///
 /// ```
-/// use application::input::raven_template_parser::product_list;
+/// use raven::application::command_runner::config::parser::product_list;
 /// let vec1: Vec<u8> = vec![1,2,3];
 /// let vec2: Vec<String> = vec!["-1".to_owned(), "-2".to_owned(), "-3".to_owned()];
 ///
