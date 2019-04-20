@@ -10,6 +10,7 @@ extern crate rusoto_s3;
 extern crate serde;
 extern crate serde_derive;
 extern crate serde_yaml;
+extern crate slack_hook;
 
 #[macro_use]
 pub mod macros;
