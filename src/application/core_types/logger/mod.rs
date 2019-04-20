@@ -7,6 +7,10 @@ use std::fmt::Debug;
 pub trait Logger {
     fn log(&self, level: LogLevel, message: &str);
 
+    fn log_trace<T: Debug>(&self, label: &str, object: &T) {
+        self.log(LogLevel::Trace, &format!("{}: {:?}", label, object));
+    }
+    
     fn log_debug<T: Debug>(&self, label: &str, object: &T) {
         self.log(LogLevel::Debug, &format!("{}: {:?}", label, object));
     }

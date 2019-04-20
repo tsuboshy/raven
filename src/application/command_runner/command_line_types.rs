@@ -16,6 +16,7 @@ use log4rs::{
     config::{Appender, Config, Root},
     encode::pattern::PatternEncoder,
 };
+use std::fmt::Debug;
 
 pub struct Prd {
     config: RavenConfig,
@@ -33,7 +34,7 @@ impl Prd {
 fn log_config(log_config: &LogConfig) -> Config {
     let file_append = FileAppender::builder()
         .append(true)
-        .encoder(Box::new(PatternEncoder::new("{d} - {m}{n}")))
+        .encoder(Box::new(PatternEncoder::new("{d} - [{l}]\t{m}{n}")))
         .build(&log_config.file_path)
         .unwrap();
 
@@ -76,6 +77,14 @@ impl Logger for Prd {
             LogLevel::Warn => warn!("{}", message),
             LogLevel::Error => error!("{}", message),
         }
+    }
+
+    fn log_trace<T: Debug>(&self, label: &str, object: &T) {
+        trace!("{}: {:?}", label, object);
+    }
+
+    fn log_debug<T: Debug>(&self, label: &str, object: &T) {
+        debug!("{}: {:?}", label, object);
     }
 }
 
