@@ -1,4 +1,5 @@
-use super::logger::{LogLevel, Logger};
+use super::logger::LogLevel;
+use crate::application::core_types::logger::write_error_log_if_err;
 use serde_derive::*;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -17,15 +18,15 @@ pub trait Notify {
     fn notify(&self, level: LogLevel, message: &str) -> Result<(), NotifyError>;
 
     fn notify_error(&self, message: &str) -> Result<(), NotifyError> {
-        self.notify(LogLevel::Error, message)
+        write_error_log_if_err("failed to notify", self.notify(LogLevel::Error, message))
     }
 
     fn notify_warn(&self, message: &str) -> Result<(), NotifyError> {
-        self.notify(LogLevel::Warn, message)
+        write_error_log_if_err("failed to notify", self.notify(LogLevel::Warn, message))
     }
 
     fn notify_info(&self, message: &str) -> Result<(), NotifyError> {
-        self.notify(LogLevel::Info, message)
+        write_error_log_if_err("failed to notify", self.notify(LogLevel::Info, message))
     }
 }
 

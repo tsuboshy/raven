@@ -203,7 +203,7 @@ fn header_map_to_hash_map(header_map: &HeaderMap) -> HashMap<String, String> {
     string_map
 }
 
-//#[ignore]
+#[ignore]
 #[test]
 fn try_crawler() {
     struct TestCrawler;

@@ -3,7 +3,7 @@ use crate::application::{
     command_runner::{config::config::RavenConfig, config::log::LogConfig},
     core_types::{
         crawler::Crawler,
-        logger::{LogLevel, Logger},
+        logger::LogLevel,
         notify_method::{Notify, NotifyError},
         persist::Persist,
     },
@@ -16,7 +16,6 @@ use log4rs::{
     config::{Appender, Config, Root},
     encode::pattern::PatternEncoder,
 };
-use std::fmt::Debug;
 
 pub struct Prd {
     config: RavenConfig,
@@ -68,28 +67,8 @@ impl HasConfig for Prd {
 
 impl Persist for Prd {}
 
-impl Logger for Prd {
-    fn log(&self, level: LogLevel, message: &str) {
-        match level {
-            LogLevel::Trace => trace!("{}", message),
-            LogLevel::Debug => debug!("{}", message),
-            LogLevel::Info => info!("{}", message),
-            LogLevel::Warn => warn!("{}", message),
-            LogLevel::Error => error!("{}", message),
-        }
-    }
-
-    fn log_trace<T: Debug>(&self, label: &str, object: &T) {
-        trace!("{}: {:?}", label, object);
-    }
-
-    fn log_debug<T: Debug>(&self, label: &str, object: &T) {
-        debug!("{}: {:?}", label, object);
-    }
-}
-
 impl Notify for Prd {
-    fn notify(&self, level: LogLevel, message: &str) -> Result<(), NotifyError> {
+    fn notify(&self, _level: LogLevel, _message: &str) -> Result<(), NotifyError> {
         Ok(())
     }
 }

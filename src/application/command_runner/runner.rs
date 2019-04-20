@@ -1,23 +1,20 @@
 use crate::application::{
-    command_runner::{config::config::HasConfig, config::config::RavenConfig},
-    core_types::{crawler::Crawler, logger::Logger, notify_method::Notify, persist::Persist},
+    command_runner::config::config::HasConfig,
+    core_types::{crawler::Crawler, notify_method::Notify, persist::Persist},
     raven_crawl_task::{CrawlTaskError, CrawlTaskResult, RavenCrawlTask},
 };
 use futures::future::Future;
 use futures_cpupool::{CpuFuture, CpuPool};
 use std::sync::Arc;
 
-pub trait CommandLineRaven: HasConfig + Crawler + Persist + Notify + Logger {}
+pub trait CommandLineRaven: HasConfig + Crawler + Persist + Notify {}
 
 pub fn run_raven_application<App>(app: App)
 where
     App: CommandLineRaven + Sync + Send + 'static,
 {
-    app.log_info(&format!(
-        "raven application start: {}",
-        app.get_config().name
-    ));
-    app.log_debug("config", app.get_config());
+    info!("raven application start: {}", app.get_config().name);
+    debug!("raven config: {:?}", app.get_config());
     let thread_size = app.get_config().max_threads;
     match app.get_config().create_crawler_tasks() {
         Ok(tasks) => {
@@ -25,8 +22,8 @@ where
         }
         Err(err) => {
             let err_msg = format!("failed to create request: {}", err);
-            app.log_error(&err_msg);
-            app.log_error_if_err(app.notify_error(&err_msg));
+            error!("{}", err_msg);
+            let _ = app.notify_error(&err_msg);
         }
     }
 }
@@ -39,8 +36,9 @@ fn crawl_in_parallel<App>(
 where
     App: CommandLineRaven + Sync + Send + 'static,
 {
-    app_arc.log_info(&format!("num of crawler tasks: {}", tasks.len()));
-    app_arc.log_debug("tasks detail", &tasks);
+    info!("num of crawler tasks: {}", tasks.len());
+    info!("thread size: {}", thread_size);
+    debug!("tasks detail: {:?}", &tasks);
 
     let mut future_list: Vec<CpuFuture<CrawlTaskResult, CrawlTaskError>> =
         Vec::with_capacity(tasks.len());
@@ -56,7 +54,7 @@ where
         .map(|future| future.wait())
         .collect();
 
-    app_arc.log_info("complete all crawler tasks");
+    info!("complete all crawler tasks");
 
     task_results
 }

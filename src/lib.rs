@@ -3,8 +3,6 @@ extern crate combine;
 extern crate futures;
 extern crate futures_cpupool;
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate log;
 extern crate log4rs;
 extern crate rusoto_core;
