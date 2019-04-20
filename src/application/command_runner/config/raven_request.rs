@@ -1,7 +1,7 @@
-use crate::crawl::request::Encoding;
-use crate::crawl::Method;
-use serde_derive::*;
-use std::collections::hash_map::HashMap;
+use crate::application::core_types::crawler::encoding::Encoding;
+use crate::application::core_types::crawler::request::Method;
+use serde_derive::Deserialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct RavenRequest {

@@ -1,11 +1,14 @@
-use crate::mime::Mime;
-use rusoto_core::ByteStream;
-pub use rusoto_core::Region;
-use rusoto_s3::{PutObjectError, PutObjectOutput, PutObjectRequest, S3Client, S3};
 use std::default::Default;
 use std::error::Error;
 use std::str::FromStr;
 use std::time::Duration;
+
+use rusoto_core::ByteStream;
+pub use rusoto_core::Region;
+use rusoto_s3::{PutObjectError, PutObjectOutput, PutObjectRequest, S3Client, S3};
+
+use super::PersistError;
+use crate::mime::Mime;
 
 pub fn write_to_s3(request: S3WriteFileRequest) -> Result<(), S3WriterError> {
     let typed_region = match Region::from_str(&request.region) {
@@ -62,6 +65,12 @@ impl<'a> S3WriteFileRequest<'a> {
 }
 #[derive(Debug, Eq, PartialEq)]
 pub struct S3WriterError(pub String);
+
+impl From<S3WriterError> for PersistError {
+    fn from(e: S3WriterError) -> Self {
+        PersistError::FailedToPutToS3(e.0)
+    }
+}
 
 #[test]
 #[ignore]

@@ -1,9 +1,12 @@
-use encoding_rs::*;
-use serde::de::{Deserialize, Deserializer, Error, Unexpected, Visitor};
 use std::borrow::Cow;
 use std::fmt;
 use std::str::FromStr;
 use std::string::ToString;
+
+use encoding_rs::*;
+use serde::de::{Deserialize, Deserializer, Error, Unexpected, Visitor};
+
+use self::Charset::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Charset {
@@ -47,8 +50,6 @@ pub enum Charset {
     Windows874,
     XMacCyrillic,
 }
-
-use self::Charset::*;
 
 impl Charset {
     pub fn get_encoding(&self) -> &'static Encoding {
