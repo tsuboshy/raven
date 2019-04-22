@@ -3,11 +3,10 @@ extern crate serde_yaml;
 
 use raven::application::command_runner::config::config::RavenConfig;
 use raven::application::command_runner::config::log::LogConfig;
-use raven::application::command_runner::config::notify::NotifyMethod;
+use raven::application::command_runner::config::notify_method::NotifyMethod;
 use raven::application::core_types::crawler::request::Method::{Get, Post};
 use raven::application::core_types::logger::LogLevel;
 use raven::application::core_types::logger::LogLevel::{Debug, Warn};
-use raven::application::core_types::notify::Notify;
 use raven::application::core_types::persist::PersistMethod;
 use raven::charset::Charset;
 
