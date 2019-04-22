@@ -11,15 +11,6 @@ use std::sync::Arc;
 
 pub trait CommandLineRaven: HasConfig + Crawler + Persist + Notify {}
 
-pub struct CommandLineResult {
-    pub crawler_name: String,
-    pub hostname: String,
-    pub total_duration: i64,
-    pub total_request_num: u32,
-    pub failure_request_num: u32,
-    pub output_failure_num: u32,
-}
-
 pub fn run_raven_application<App>(app: App)
 where
     App: CommandLineRaven + Sync + Send + 'static,
