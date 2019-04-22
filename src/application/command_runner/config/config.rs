@@ -1,12 +1,12 @@
 use super::{
     log::LogConfig,
+    notify_method::NotifyMethod,
     parser::{product_list, try_expand_numeric_list, TemplateBuilder},
     raven_request::RavenRequest,
 };
 use crate::application::{
     core_types::{
         crawler::request::{CrawlerRequest, Method},
-        notify_method::NotifyMethod,
         persist::PersistMethod,
     },
     raven_crawl_task::*,

@@ -3,9 +3,11 @@ extern crate serde_yaml;
 
 use raven::application::command_runner::config::config::RavenConfig;
 use raven::application::command_runner::config::log::LogConfig;
+use raven::application::command_runner::config::notify::NotifyMethod;
 use raven::application::core_types::crawler::request::Method::{Get, Post};
+use raven::application::core_types::logger::LogLevel;
 use raven::application::core_types::logger::LogLevel::{Debug, Warn};
-use raven::application::core_types::notify_method::{Notify, NotifyMethod};
+use raven::application::core_types::notify::Notify;
 use raven::application::core_types::persist::PersistMethod;
 use raven::charset::Charset;
 
@@ -48,6 +50,7 @@ notify:
       url: "https://slack.service/xxxx"
       channel: "raven-devops"
       mention: "here"
+      level: "error"
 
 output:
   - local_file:
@@ -106,6 +109,7 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
         url: "https://slack.service/xxxx".to_owned(),
         channel: "raven-devops".to_owned(),
         mention: Some("here".to_owned()),
+        level: LogLevel::Error,
     };
     assert_eq!(notify[0], expected_notify);
 
