@@ -1,14 +1,18 @@
 extern crate raven;
 extern crate serde_yaml;
 
-use raven::application::command_runner::config::config::RavenConfig;
-use raven::application::command_runner::config::log::LogConfig;
-use raven::application::command_runner::config::notify_method::NotifyMethod;
-use raven::application::core_types::crawler::request::Method::{Get, Post};
-use raven::application::core_types::logger::LogLevel;
-use raven::application::core_types::logger::LogLevel::{Debug, Warn};
-use raven::application::core_types::persist::PersistMethod;
-use raven::charset::Charset;
+use raven::{
+    application::{
+        command_runner::config::config::RavenConfig,
+        command_runner::config::log::{EsConfig, FileLogConfig, LogConfig},
+        command_runner::config::notify_method::NotifyMethod,
+        core_types::crawler::request::Method::{Get, Post},
+        core_types::logger::LogLevel,
+        core_types::logger::LogLevel::{Debug, Warn},
+        core_types::persist::PersistMethod,
+    },
+    charset::Charset,
+};
 
 static FULL_PARAMETER_YAML: &'static str = r#"
 name: "テスト"
@@ -61,8 +65,12 @@ output:
       object_key: "test_key"
 
 log:
-  file_path: "/var/tmp/application.log"
-  level: "warn"
+  file:
+    path: "/var/tmp/application.log"
+    level: "warn"
+      
+  elasticsearch:
+    endpoint: "http://localhost:9200"
 "#;
 
 #[test]
@@ -126,8 +134,14 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
     assert_eq!(output[1], expected_s3);
 
     let expected_log_config = LogConfig {
-        file_path: "/var/tmp/application.log".to_owned(),
-        level: Warn,
+        file: FileLogConfig {
+            path: "/var/tmp/application.log".to_owned(),
+            level: Warn,
+        },
+
+        elasticsearch: Some(EsConfig {
+            endpoint: "http://localhost:9200".to_owned(),
+        }),
     };
     assert_eq!(parsed.log, expected_log_config);
 }
@@ -143,8 +157,9 @@ output:
       file_path: "/var/application/%Y/%m/%d/{{id}}.html"
 
 log:
-  file_path: "/var/tmp/application.log"
-  level: "DEBUG"
+  file: 
+    path: "/var/tmp/application.log"
+    level: "DEBUG"
 "#;
 
 #[test]
@@ -179,8 +194,11 @@ fn it_should_success_to_parse_when_only_required_param_exists() {
     assert_eq!(output[0], expected_local);
 
     let expected_log_config = LogConfig {
-        file_path: "/var/tmp/application.log".to_owned(),
-        level: Debug,
+        file: FileLogConfig {
+            path: "/var/tmp/application.log".to_owned(),
+            level: Debug,
+        },
+        elasticsearch: None,
     };
     assert_eq!(parsed.log, expected_log_config);
 }

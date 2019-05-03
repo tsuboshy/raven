@@ -1,8 +1,6 @@
 use super::boundary::CommandLineRaven;
 use crate::application::{
-    command_runner::{
-        config::config::RavenConfig, config::log::LogConfig, config::notify_method::NotifyMethod,
-    },
+    command_runner::{config::config::RavenConfig, config::log::LogConfig},
     core_types::{
         crawler::Crawler,
         logger::LogLevel,
@@ -12,13 +10,21 @@ use crate::application::{
 };
 
 use crate::application::command_runner::config::config::HasConfig;
-use crate::application::command_runner::config::notify_method::send_to_slack;
+use crate::application::command_runner::config::notify_method::{send_to_slack, NotifyMethod};
+use crate::application::core_types::log::elastic_search::{BulkInsertToEs, EsDocument};
+use crate::es_api::create_es_index_if_not_exists;
+use crate::macros::HashMap;
 use log::LevelFilter;
 use log4rs::{
     append::file::FileAppender,
     config::{Appender, Config, Root},
     encode::pattern::PatternEncoder,
 };
+use rs_es::error::EsError;
+use rs_es::operations::bulk::Action;
+use rs_es::Client;
+use std::io::{Error, ErrorKind};
+use uuid::Uuid;
 
 pub struct Prd {
     config: RavenConfig,
@@ -37,7 +43,7 @@ fn log_config(log_config: &LogConfig) -> Config {
     let file_append = FileAppender::builder()
         .append(true)
         .encoder(Box::new(PatternEncoder::new("{d} - [{l}]\t{m}{n}")))
-        .build(&log_config.file_path)
+        .build(&log_config.file.path)
         .unwrap();
 
     Config::builder()
@@ -45,7 +51,7 @@ fn log_config(log_config: &LogConfig) -> Config {
         .build(
             Root::builder()
                 .appender("file")
-                .build(to_log_level(&log_config.level)),
+                .build(to_log_level(&log_config.file.level)),
         )
         .unwrap()
 }
@@ -114,3 +120,70 @@ impl Notify for Prd {
 }
 
 impl Crawler for Prd {}
+
+impl BulkInsertToEs for Prd {
+    fn bulk_insert<'a, T>(&self, documents: &[T]) -> Result<(), EsError>
+    where
+        T: EsDocument<'a>,
+    {
+        if let Some(es_config) = &self.config.log.elasticsearch {
+            let mut actions_by_index_name: HashMap<&str, Vec<Action<&T>>> = HashMap::new();
+
+            for doc in documents {
+                if !actions_by_index_name.contains_key(doc.elastic_search_index_name()) {
+                    actions_by_index_name.insert(doc.elastic_search_index_name(), vec![]);
+                }
+
+                let same_index_docs: &mut Vec<Action<&T>> = actions_by_index_name
+                    .get_mut(doc.elastic_search_index_name())
+                    .expect("unreachable code! @ impl BulkInsertToEs for Prd");
+
+                let action = Action::create(doc)
+                    .with_id(Uuid::new_v4().to_string())
+                    .with_doc_type(T::elastic_search_typename());
+
+                same_index_docs.push(action);
+            }
+
+            let mut client = Client::init(&es_config.endpoint).unwrap();
+
+            // bulk by index name
+            for (index_name, actions) in actions_by_index_name {
+                client.bulk(&actions).with_index(index_name).send()?;
+            }
+
+            Ok(())
+        } else {
+            Ok(())
+        }
+    }
+
+    fn create_index_template<'a, T>(&self, name: &str) -> Result<(), Error>
+    where
+        T: EsDocument<'a>,
+    {
+        if let Some(es_config) = &self.config.log.elasticsearch {
+            let template_json = T::elastic_search_template();
+            let result = create_es_index_if_not_exists(&es_config.endpoint, name, template_json);
+
+            if let Err(err) = result {
+                error!("{}", err);
+                Err(Error::from(ErrorKind::Other))
+            } else {
+                Ok(())
+            }
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn try_to_create_index() {
+    use crate::application::core_types::crawler::metrics::CrawlerMetrics;
+    let _ = dbg!(create_es_index_if_not_exists(
+        "http://localhost:9200",
+        "test",
+        CrawlerMetrics::elastic_search_template()
+    ));
+}

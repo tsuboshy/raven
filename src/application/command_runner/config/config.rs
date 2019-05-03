@@ -180,8 +180,11 @@ fn create_request_from_config_test() {
         }],
         max_threads: 1,
         log: LogConfig {
-            file_path: "/var/tmp/log".to_owned(),
-            level: LogLevel::Debug,
+            file: FileLogConfig {
+                path: "/var/tmp/log".to_owned(),
+                level: LogLevel::Debug,
+            },
+            elasticsearch: None,
         },
     };
 

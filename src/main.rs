@@ -4,8 +4,8 @@ extern crate log;
 extern crate raven;
 extern crate serde_yaml;
 
-use raven::application::command_runner::command_line_types::Prd;
 use raven::application::command_runner::config::config::RavenConfig;
+use raven::application::command_runner::instances::Prd;
 use raven::application::command_runner::runner::run_raven_application;
 use std::env;
 use std::fs::File;

@@ -1,14 +1,15 @@
 use std::borrow::Cow;
 use std::fmt;
 use std::str::FromStr;
-use std::string::ToString;
 
 use encoding_rs::*;
 use serde::de::{Deserialize, Deserializer, Error, Unexpected, Visitor};
+use serde_derive::Serialize;
 
 use self::Charset::*;
+use std::fmt::{Display, Formatter};
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub enum Charset {
     Big5,
     EucJp,
@@ -96,9 +97,53 @@ impl Charset {
         }
     }
 
-    pub fn convert_to(&self, other: &Charset, target: Vec<u8>) -> Vec<u8> {
-        let utf8: Cow<str> = self.get_encoding().decode(&target).0;
+    pub fn convert_to(&self, other: &Charset, target: &[u8]) -> Vec<u8> {
+        let utf8: Cow<str> = self.get_encoding().decode(target).0;
         other.get_encoding().encode(utf8.as_ref()).0.to_vec()
+    }
+
+    fn _to_string(&self) -> String {
+        match self {
+            Big5 => "big5".to_owned(),
+            EucJp => "euc-jp".to_owned(),
+            EucKr => "euc-kr".to_owned(),
+            Gbk => "gbk".to_owned(),
+            Ibm866 => "ibm866".to_owned(),
+            Iso2022Jp => "iso-2022-jp".to_owned(),
+            Iso885910 => "iso-8859-10".to_owned(),
+            Iso885913 => "iso-8859-13".to_owned(),
+            Iso885914 => "iso-8859-14".to_owned(),
+            Iso885915 => "iso-8859-15".to_owned(),
+            Iso885916 => "iso-8859-16".to_owned(),
+            Iso88592 => "iso-8859-2".to_owned(),
+            Iso88593 => "iso-8859-3".to_owned(),
+            Iso88594 => "iso-8859-4".to_owned(),
+            Iso88595 => "iso-8859-5".to_owned(),
+            Iso88596 => "iso-8859-6".to_owned(),
+            Iso88597 => "iso-8859-7".to_owned(),
+            Iso88598 => "iso-8859-8".to_owned(),
+            Iso88598I => "iso-8859-8-i".to_owned(),
+            Koi8R => "koi8-r".to_owned(),
+            Koi8U => "koi8-u".to_owned(),
+            ShiftJis => "shift_jis".to_owned(),
+            Utf16be => "utf-16be".to_owned(),
+            Utf16le => "utf-16le".to_owned(),
+            Utf8 => "utf-8".to_owned(),
+            Gb18030 => "gb18030".to_owned(),
+            Macintosh => "macintosh".to_owned(),
+            Replacement => "replacement".to_owned(),
+            Windows1250 => "windows-1250".to_owned(),
+            Windows1251 => "windows-1251".to_owned(),
+            Windows1252 => "windows-1252".to_owned(),
+            Windows1253 => "windows-1253".to_owned(),
+            Windows1254 => "windows-1254".to_owned(),
+            Windows1255 => "windows-1255".to_owned(),
+            Windows1256 => "windows-1256".to_owned(),
+            Windows1257 => "windows-1257".to_owned(),
+            Windows1258 => "windows-1258".to_owned(),
+            Windows874 => "windows-874".to_owned(),
+            XMacCyrillic => "x-mac-cyrillic".to_owned(),
+        }
     }
 }
 
@@ -152,49 +197,9 @@ impl FromStr for Charset {
     }
 }
 
-impl ToString for Charset {
-    fn to_string(&self) -> String {
-        match self {
-            Big5 => "big5".to_owned(),
-            EucJp => "euc-jp".to_owned(),
-            EucKr => "euc-kr".to_owned(),
-            Gbk => "gbk".to_owned(),
-            Ibm866 => "ibm866".to_owned(),
-            Iso2022Jp => "iso-2022-jp".to_owned(),
-            Iso885910 => "iso-8859-10".to_owned(),
-            Iso885913 => "iso-8859-13".to_owned(),
-            Iso885914 => "iso-8859-14".to_owned(),
-            Iso885915 => "iso-8859-15".to_owned(),
-            Iso885916 => "iso-8859-16".to_owned(),
-            Iso88592 => "iso-8859-2".to_owned(),
-            Iso88593 => "iso-8859-3".to_owned(),
-            Iso88594 => "iso-8859-4".to_owned(),
-            Iso88595 => "iso-8859-5".to_owned(),
-            Iso88596 => "iso-8859-6".to_owned(),
-            Iso88597 => "iso-8859-7".to_owned(),
-            Iso88598 => "iso-8859-8".to_owned(),
-            Iso88598I => "iso-8859-8-i".to_owned(),
-            Koi8R => "koi8-r".to_owned(),
-            Koi8U => "koi8-u".to_owned(),
-            ShiftJis => "shift_jis".to_owned(),
-            Utf16be => "utf-16be".to_owned(),
-            Utf16le => "utf-16le".to_owned(),
-            Utf8 => "utf-8".to_owned(),
-            Gb18030 => "gb18030".to_owned(),
-            Macintosh => "macintosh".to_owned(),
-            Replacement => "replacement".to_owned(),
-            Windows1250 => "windows-1250".to_owned(),
-            Windows1251 => "windows-1251".to_owned(),
-            Windows1252 => "windows-1252".to_owned(),
-            Windows1253 => "windows-1253".to_owned(),
-            Windows1254 => "windows-1254".to_owned(),
-            Windows1255 => "windows-1255".to_owned(),
-            Windows1256 => "windows-1256".to_owned(),
-            Windows1257 => "windows-1257".to_owned(),
-            Windows1258 => "windows-1258".to_owned(),
-            Windows874 => "windows-874".to_owned(),
-            XMacCyrillic => "x-mac-cyrillic".to_owned(),
-        }
+impl Display for Charset {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), std::fmt::Error> {
+        write!(f, "{}", self._to_string())
     }
 }
 

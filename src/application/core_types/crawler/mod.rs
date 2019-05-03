@@ -5,5 +5,6 @@ pub mod result;
 pub use self::request::CrawlerRequest;
 pub use self::result::{CrawlerError, CrawlerResult};
 pub mod crawler;
+pub mod metrics;
 
 pub use self::crawler::Crawler;

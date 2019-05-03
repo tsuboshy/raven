@@ -9,7 +9,7 @@ use crate::mime::Mime;
 pub trait Persist {
     fn persist_data(
         &self,
-        method: PersistMethod,
+        method: &PersistMethod,
         data: &[u8],
         mime: &Mime,
     ) -> Result<(), PersistError> {
@@ -18,7 +18,7 @@ pub trait Persist {
 }
 
 pub fn persist_default_impl(
-    method: PersistMethod,
+    method: &PersistMethod,
     content: &[u8],
     mime: &Mime,
 ) -> Result<(), PersistError> {
@@ -34,9 +34,9 @@ pub fn persist_default_impl(
             object_key,
         } => {
             let s3_request = S3WriteFileRequest {
-                region,
-                bucket_name,
-                object_key,
+                region: region.to_owned(),
+                bucket_name: bucket_name.to_owned(),
+                object_key: object_key.to_owned(),
                 content_type: mime,
                 content,
             };
