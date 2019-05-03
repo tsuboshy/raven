@@ -1,4 +1,5 @@
 use super::{encoding::Encoding, request::Method, CrawlerError, CrawlerRequest, CrawlerResult};
+use crate::charset::Charset;
 use crate::mime::{Mime, TextMime};
 use chrono::Local;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
@@ -35,7 +36,7 @@ pub fn crawler_default_impl(request: &CrawlerRequest) -> Result<CrawlerResult, C
     };
 
     let mut retry_count: u8 = 0;
-    let start_datetime = Local::now().timestamp_millis();
+    let start_datetime = Local::now();
 
     loop {
         let mut response_result: Result<Response, Error> = match &request.method {
@@ -53,36 +54,59 @@ pub fn crawler_default_impl(request: &CrawlerRequest) -> Result<CrawlerResult, C
                     }
                 })?;
 
-                let mut response_content_type = response
+                let response_content_type = response
                     .headers()
                     .get("Content-Type")
                     .and_then(|header_value: &HeaderValue| header_value.to_str().ok())
                     .and_then(|mime_str| Mime::from_str(mime_str).ok())
+                    .map(|mime| {
+                        overwrite_input_charset_if_configured(mime, &request.encoding_setting)
+                    })
                     .or_else(|| {
                         text_plain_if_input_charset_setting_exists(&request.encoding_setting)
                     })
                     .unwrap_or(Mime::ApplicationOctetStream);
 
-                let body_converted_encoding: Vec<u8> = convert_encoding_if_need(
-                    &request.encoding_setting,
-                    &mut response_content_type,
-                    response_body,
-                )?;
-
-                let raven_response = CrawlerResult {
+                let mut raven_response = CrawlerResult {
                     response_status: response.status().as_u16(),
                     response_header: header_map_to_hash_map(response.headers()),
-                    response_body: body_converted_encoding,
-                    mills_takes_to_complete_to_request: end_datetime - start_datetime,
+                    response_body,
+                    mills_takes_to_complete_to_request: end_datetime
+                        - start_datetime.timestamp_millis(),
                     retry_count,
                     response_content_type,
+                    crawl_date: start_datetime,
                 };
 
                 if response.status().is_success() {
+                    if let Some(Encoding { output, .. }) = &request.encoding_setting {
+                        raven_response
+                            .convert_response_encoding_if_has_text_mime_type(output.clone());
+
+                        if !raven_response.has_same_charset(output) {
+                            error!(
+                                "conflict configured output charset({}) and actually converted({}): {:?}",
+                                output,
+                                raven_response.response_content_type.get_charset()
+                                    .map(|c| c.to_string())
+                                    .unwrap_or("".to_owned()),
+                                raven_response
+                            );
+
+                            return Err(CrawlerError::CharsetConversionError {
+                                error_detail:
+                                    "conflict configured output charset and actually converted"
+                                        .to_owned(),
+                                crawler_result: raven_response,
+                            });
+                        }
+                    }
                     return Ok(raven_response);
                 } else if response.status().is_client_error() {
+                    raven_response.convert_response_encoding_if_has_text_mime_type(Charset::Utf8);
                     return Err(CrawlerError::ClientError(raven_response));
                 } else if response.status().is_server_error() && retry_count >= request.max_retry {
+                    raven_response.convert_response_encoding_if_has_text_mime_type(Charset::Utf8);
                     return Err(CrawlerError::ServerError(raven_response));
                 } else {
                     retry_count += 1;
@@ -95,48 +119,39 @@ pub fn crawler_default_impl(request: &CrawlerRequest) -> Result<CrawlerResult, C
                     .and_then(|e| e.downcast_ref::<IOError>())
                     .map(|e: &IOError| e.kind());
 
-                if let Some(ErrorKind::TimedOut) = cast_to_hyper_error {
-                    if retry_count >= request.max_retry {
-                        return Err(CrawlerError::TimeoutError {
-                            timeout_second: request.timeout,
-                            retry_count,
-                        });
-                    } else {
-                        retry_count += 1;
-                        continue;
+                match cast_to_hyper_error {
+                    Some(ErrorKind::TimedOut) | Some(ErrorKind::WouldBlock) => {
+                        if retry_count >= request.max_retry {
+                            return Err(CrawlerError::TimeoutError {
+                                timeout_second: request.timeout,
+                                retry_count,
+                            });
+                        } else {
+                            retry_count += 1;
+                            continue;
+                        }
                     }
-                } else {
-                    return Err(other_error!("request error: {}", error));
+
+                    _ => {
+                        error!("unexpected request error: {}", error);
+                        return Err(other_error!("request error: {}", error));
+                    }
                 }
             }
         }
     }
 }
 
-fn convert_encoding_if_need(
-    encoding_setting: &Option<Encoding>,
-    detected_mime: &mut Mime,
-    target: Vec<u8>,
-) -> Result<Vec<u8>, CrawlerError> {
-    if let Some(Encoding { input, output }) = encoding_setting {
-        match detected_mime {
-            Mime::Text { charset, .. } => {
-                let from_charset = input
-                    .clone()
-                    .or_else(|| charset.clone())
-                    .ok_or(CrawlerError::CharsetConversionError {
-                    error_detail:
-                        "failed to detect charset. please configure config charset in yaml file."
-                            .to_owned(),
-                })?;
-                *charset = Some(output.clone());
-                Ok(from_charset.convert_to(output, target))
-            }
-
-            _ => Ok(target),
-        }
+fn overwrite_input_charset_if_configured(mime: Mime, encoding: &Option<Encoding>) -> Mime {
+    if let Some(Encoding {
+        input: Some(input), ..
+    }) = encoding
+    {
+        let mut owned_mime = mime;
+        owned_mime.set_charset_when_text_mime(input.clone());
+        owned_mime
     } else {
-        Ok(target)
+        mime
     }
 }
 

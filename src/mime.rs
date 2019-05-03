@@ -6,7 +6,9 @@ use crate::charset::Charset;
 use self::Mime::*;
 use self::TextMime::*;
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+use serde_derive::Serialize;
+
+#[derive(Debug, Eq, PartialEq, Clone, Serialize)]
 pub enum Mime {
     ApplicationOctetStream,
     ApplicationPdf,
@@ -22,7 +24,7 @@ pub enum Mime {
     },
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize)]
 pub enum TextMime {
     ApplicationFormUrlencoded,
     ApplicationJson,
@@ -48,6 +50,22 @@ impl Mime {
     pub fn is_text(&self) -> bool {
         match self {
             Text { .. } => true,
+            _ => false,
+        }
+    }
+
+    pub fn get_charset(&self) -> Option<&Charset> {
+        match self {
+            Text { charset, .. } => charset.as_ref(),
+
+            _ => None,
+        }
+    }
+
+    pub fn has_same_charset(&self, target: &Charset) -> bool {
+        match self.get_charset() {
+            Some(own) => own == target,
+
             _ => false,
         }
     }

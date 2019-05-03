@@ -2,7 +2,7 @@ use super::encoding::Encoding;
 use crate::macros::HashMap;
 use serde_derive::*;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Serialize, Clone)]
 pub struct CrawlerRequest {
     pub url: String,
     pub method: Method,
@@ -14,7 +14,7 @@ pub struct CrawlerRequest {
     pub body_params: HashMap<String, String>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Clone, Serialize)]
 pub enum Method {
     Get,
     Post,

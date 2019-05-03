@@ -2,7 +2,7 @@ use serde_derive::*;
 
 /// this module supplies how to persist crawled data.
 
-#[derive(Debug, Deserialize, PartialEq, Clone, Eq, Hash)]
+#[derive(Debug, Deserialize, PartialEq, Clone, Eq, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PersistMethod {
     /// write to local file
