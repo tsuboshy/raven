@@ -15,6 +15,7 @@ extern crate lazy_static;
 extern crate hostname as _hostname;
 extern crate rand;
 extern crate serde_json;
+extern crate slack_hook;
 
 #[macro_use]
 pub mod macros;

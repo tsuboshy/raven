@@ -1,13 +1,18 @@
 extern crate raven;
 extern crate serde_yaml;
 
-use raven::application::command_runner::config::config::RavenConfig;
-use raven::application::command_runner::config::log::{EsConfig, FileLogConfig, LogConfig};
-use raven::application::core_types::crawler::request::Method::{Get, Post};
-use raven::application::core_types::logger::LogLevel::{Debug, Warn};
-use raven::application::core_types::notify_method::{Notify, NotifyMethod};
-use raven::application::core_types::persist::PersistMethod;
-use raven::charset::Charset;
+use raven::{
+    application::{
+        command_runner::config::config::RavenConfig,
+        command_runner::config::log::{EsConfig, FileLogConfig, LogConfig},
+        command_runner::config::notify_method::NotifyMethod,
+        core_types::crawler::request::Method::{Get, Post},
+        core_types::logger::LogLevel,
+        core_types::logger::LogLevel::{Debug, Warn},
+        core_types::persist::PersistMethod,
+    },
+    charset::Charset,
+};
 
 static FULL_PARAMETER_YAML: &'static str = r#"
 name: "テスト"
@@ -48,6 +53,7 @@ notify:
       url: "https://slack.service/xxxx"
       channel: "raven-devops"
       mention: "here"
+      level: "error"
 
 output:
   - local_file:
@@ -110,6 +116,7 @@ fn it_should_success_to_parse_when_full_parameter_exists() {
         url: "https://slack.service/xxxx".to_owned(),
         channel: "raven-devops".to_owned(),
         mention: Some("here".to_owned()),
+        level: LogLevel::Error,
     };
     assert_eq!(notify[0], expected_notify);
 

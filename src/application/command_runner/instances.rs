@@ -4,12 +4,13 @@ use crate::application::{
     core_types::{
         crawler::Crawler,
         logger::LogLevel,
-        notify_method::{Notify, NotifyError},
+        notify::{Notify, NotifyError},
         persist::Persist,
     },
 };
 
 use crate::application::command_runner::config::config::HasConfig;
+use crate::application::command_runner::config::notify_method::{send_to_slack, NotifyMethod};
 use crate::application::core_types::log::elastic_search::{BulkInsertToEs, EsDocument};
 use crate::es_api::create_es_index_if_not_exists;
 use crate::macros::HashMap;
@@ -76,8 +77,45 @@ impl HasConfig for Prd {
 impl Persist for Prd {}
 
 impl Notify for Prd {
-    fn notify(&self, _level: LogLevel, _message: &str) -> Result<(), NotifyError> {
-        Ok(())
+    fn notify(
+        &self,
+        notify_level: LogLevel,
+        label: &str,
+        message: &str,
+    ) -> Result<(), NotifyError> {
+        let mut err_msgs: Vec<String> = vec![];
+        for notify_method in &self.config.notify {
+            match notify_method {
+                NotifyMethod::Slack {
+                    url,
+                    channel,
+                    mention,
+                    level,
+                } if level == &notify_level => {
+                    let username = format!("raven - {}", &self.config.name);
+                    let send_result = send_to_slack(
+                        url,
+                        channel,
+                        mention.as_ref(),
+                        &username,
+                        level,
+                        label,
+                        message,
+                    );
+                    if let Err(err) = send_result {
+                        err_msgs.push(err.0);
+                    }
+                }
+
+                _ => (),
+            }
+        }
+
+        if err_msgs.is_empty() {
+            Ok(())
+        } else {
+            Err(NotifyError(err_msgs.join(", ")))
+        }
     }
 }
 
