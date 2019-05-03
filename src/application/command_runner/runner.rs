@@ -141,7 +141,7 @@ fn notify_result<App>(
         total duration:      {} seconds
         failure task num:    {} 
         failure request num: {} 
-        output failure num:  {} ",
+        failure persist num: {} ",
         &app.get_config().name,
         hostname,
         start_time.format("%F %T"),
