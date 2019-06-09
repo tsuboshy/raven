@@ -145,6 +145,7 @@ impl RavenConfig {
 
 #[test]
 fn create_request_from_config_test() {
+    use crate::application::command_runner::config::log::FileLogConfig;
     use crate::application::core_types::logger::LogLevel;
     let var: HashMap<String, Vec<String>> = hashmap![
         "id".to_owned() => vec!["1".to_owned(), "2".to_owned()]
@@ -160,7 +161,7 @@ fn create_request_from_config_test() {
         "limit".to_owned() => vec!["200".to_owned()]
     ];
 
-    let raven_config = RavenConfig {
+    let raven_config: RavenConfig = RavenConfig {
         name: "test_config".to_owned(),
         request: RavenRequest {
             url: "http://test.com/{{id}}".to_owned(),
@@ -281,6 +282,7 @@ fn parse_key_value_map(map: &HashMap<String, Vec<String>>) -> Vec<HashMap<String
 
 #[test]
 fn parse_key_value_map_test() {
+    use crate::application::command_runner::config::log::FileLogConfig;
     let now_y_m_d = Local::now().format("%Y-%m-%d");
     let test_map: HashMap<String, Vec<String>> = hashmap![
         "name".to_owned() => vec!["tsuboshy".to_owned(), "sato".to_owned()],

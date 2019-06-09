@@ -139,7 +139,7 @@ fn notify_result<App>(
         crawler hostname:    {} 
         start datetime:      {} 
         total duration:      {} seconds
-        failure task num:    {} 
+        total task num:      {} 
         failure request num: {} 
         failure persist num: {} ",
         &app.get_config().name,
