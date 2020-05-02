@@ -4,6 +4,7 @@ use crate::mime::{Mime, TextMime};
 use chrono::Local;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{Client, Error, Response};
+use std::thread::sleep;
 use std::{
     collections::HashMap,
     hash::Hash,
@@ -39,6 +40,10 @@ pub fn crawler_default_impl(request: &CrawlerRequest) -> Result<CrawlerResult, C
     let start_datetime = Local::now();
 
     loop {
+        if let Some(sleep_sec) = request.sleep {
+            sleep(Duration::from_secs(sleep_sec.into()))
+        }
+
         let mut response_result: Result<Response, Error> = match &request.method {
             Method::Get => client.get(&url).send(),
             Method::Post => client.post(&url).form(&request.body_params).send(),
@@ -233,6 +238,7 @@ fn try_crawler() {
         query_params: HashMap::new(),
         body_params: HashMap::new(),
         encoding_setting: None,
+        sleep: None,
     };
 
     let response: CrawlerResult = TestCrawler.crawl(&raven_request).unwrap();

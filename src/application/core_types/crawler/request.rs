@@ -12,6 +12,7 @@ pub struct CrawlerRequest {
     pub max_retry: u8,
     pub query_params: HashMap<String, String>,
     pub body_params: HashMap<String, String>,
+    pub sleep: Option<u16>,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Clone, Serialize)]

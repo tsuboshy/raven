@@ -29,6 +29,8 @@ pub struct RavenConfig {
     #[serde(default = "default_max_threads")]
     pub max_threads: u16,
 
+    pub sleep: Option<u16>,
+
     pub log: LogConfig,
 }
 
@@ -71,7 +73,7 @@ impl RavenConfig {
         }
 
         // param map
-        let mut param_map_list = self
+        let mut param_map_list: Vec<HashMap<String, String>> = self
             .request
             .params
             .iter()
@@ -132,6 +134,7 @@ impl RavenConfig {
             encoding_setting: self.request.encoding.clone(),
             query_params: query_map,
             body_params: body_map,
+            sleep: self.sleep.clone(),
         };
 
         let task = RavenCrawlTask {
@@ -180,6 +183,7 @@ fn create_request_from_config_test() {
             object_key: "test/%Y%m%d/{{id}}_{{offset}}_{{limit}}.html".to_owned(),
         }],
         max_threads: 1,
+        sleep: None,
         log: LogConfig {
             file: FileLogConfig {
                 path: "/var/tmp/log".to_owned(),
