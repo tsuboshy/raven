@@ -19,10 +19,8 @@ name: "テスト"
 request:
   url: "https://www.craw.app/{{id}}/{{number}}"
   vars:
-    - id: 
-        - "[1..10]"
-      number: 
-        - "1"
+    id: "[1..10]"
+    number: "1"
   method: Post
   headers:
     User-Agent: "raven"
@@ -35,10 +33,8 @@ request:
       limit:
         - "200"
 
-    - offset:
-        - "0"
-      limit: 
-        - "100"
+    - offset: "0"
+      limit: "100"
   timeout_in_seconds: 30
   max_retry: 5
   encoding:
@@ -76,6 +72,7 @@ log:
 #[test]
 fn it_should_success_to_parse_when_full_parameter_exists() {
     let parsed = serde_yaml::from_str::<RavenConfig>(&FULL_PARAMETER_YAML).unwrap();
+    println!("{:?}", parsed);
     assert_eq!(parsed.name, "テスト");
     assert_eq!(parsed.request.url, "https://www.craw.app/{{id}}/{{number}}");
 
