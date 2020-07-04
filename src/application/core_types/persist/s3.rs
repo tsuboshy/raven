@@ -1,5 +1,4 @@
 use std::default::Default;
-use std::error::Error;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -30,13 +29,13 @@ pub fn write_to_s3(request: S3WriteFileRequest) -> Result<(), S3WriterError> {
             Err(e) => {
                 if let PutObjectError::HttpDispatch(_) = e {
                     if retry_count == 0 {
-                        return Err(S3WriterError(e.description().to_owned()));
+                        return Err(S3WriterError(e.to_string()));
                     } else {
                         retry_count -= 1;
                         continue;
                     }
                 } else {
-                    return Err(S3WriterError(e.description().to_owned()));
+                    return Err(S3WriterError(e.to_string()));
                 }
             }
         }

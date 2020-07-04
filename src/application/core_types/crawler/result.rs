@@ -5,6 +5,7 @@ use crate::mime::Mime;
 use chrono::{DateTime, Local};
 use serde_derive::Serialize;
 use std::fmt::{Display, Error, Formatter};
+use std::string::ToString;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub enum CrawlerError {
@@ -108,10 +109,10 @@ pub fn get_result_code(result: &Result<CrawlerResult, CrawlerError>) -> u16 {
     }
 }
 
-pub fn get_result_message(result: &Result<CrawlerResult, CrawlerError>) -> &'static str {
+pub fn get_result_message(result: &Result<CrawlerResult, CrawlerError>) -> String {
     match result {
-        Ok(_) => "success",
-        Err(crawler_error) => crawler_error.description(),
+        Ok(_) => "success".to_owned(),
+        Err(crawler_error) => crawler_error.to_string(),
     }
 }
 

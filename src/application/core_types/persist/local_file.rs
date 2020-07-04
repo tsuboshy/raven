@@ -1,6 +1,5 @@
 use crate::application::core_types::persist::PersistError;
 use std::{
-    error::Error,
     fs::{create_dir_all, OpenOptions},
     io::{BufWriter, Error as IOError, Write},
 };
@@ -16,7 +15,7 @@ impl From<FailedToWriteLocal> for PersistError {
 
 impl From<IOError> for FailedToWriteLocal {
     fn from(e: IOError) -> Self {
-        FailedToWriteLocal(e.description().to_owned())
+        FailedToWriteLocal(e.to_string())
     }
 }
 

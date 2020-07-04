@@ -16,7 +16,7 @@ use crate::serde_dateformat::yyyy_mm_dd_hh_ii_ss_z;
 pub struct CrawlerMetrics {
     pub crawler_name: String,
     pub result_code: u16,
-    pub result_message: &'static str,
+    pub result_message: String,
     pub request_duration_millis: Option<i64>,
     pub error_detail: Option<String>,
     pub request: CrawlerRequest,

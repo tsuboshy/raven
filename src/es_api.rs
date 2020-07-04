@@ -1,6 +1,5 @@
 use reqwest::{Client, Error as RequwestError};
 use serde_json::Value;
-use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
 
@@ -60,7 +59,7 @@ pub struct CreateEsIndexTemplateError(String);
 
 impl From<RequwestError> for CreateEsIndexTemplateError {
     fn from(e: RequwestError) -> Self {
-        CreateEsIndexTemplateError(e.description().to_owned())
+        CreateEsIndexTemplateError(e.to_string())
     }
 }
 
